@@ -11,13 +11,13 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, nullable: true })
   studentId: string;  // Changed from email to studentId
 
   @Column()
   password: string;
 
-  @Column()
+  @Column({ nullable: true })
   name: string;       // Changed from firstName/lastName to single name
 
   @Column({

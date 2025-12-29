@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
-import { Equipment } from '../types';
+import type { Equipment } from '../types';
 
 export default function EquipmentDetail() {
     const { id } = useParams();
@@ -23,7 +23,7 @@ export default function EquipmentDetail() {
 
     const fetchEquipment = async () => {
         try {
-            const response = await apiClient.get<Equipment>(`/api/equipments/${id}`);
+            const response = await apiClient.get<Equipment>(`/equipments/${id}`);
             setEquipment(response.data);
         } catch (err) {
             setError('Failed to load equipment details');
@@ -41,7 +41,7 @@ export default function EquipmentDetail() {
         const end = new Date(endDate).toISOString();
 
         try {
-            await apiClient.post('/api/rentals', {
+            await apiClient.post('/rentals', {
                 equipmentId: id,
                 startDate: start,
                 endDate: end,
@@ -92,8 +92,8 @@ export default function EquipmentDetail() {
                                 </span>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${equipment.status === 'AVAILABLE'
-                                    ? 'bg-green-500/20 text-green-400'
-                                    : 'bg-red-500/20 text-red-400'
+                                ? 'bg-green-500/20 text-green-400'
+                                : 'bg-red-500/20 text-red-400'
                                 }`}>
                                 {equipment.status}
                             </span>
@@ -171,8 +171,8 @@ export default function EquipmentDetail() {
                                 onClick={() => setRenting(true)}
                                 disabled={equipment.status !== 'AVAILABLE'}
                                 className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${equipment.status === 'AVAILABLE'
-                                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20'
-                                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                    ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20'
+                                    : 'bg-gray-700 text-gray-500 cursor-not-allowed'
                                     }`}
                             >
                                 {equipment.status === 'AVAILABLE' ? 'Rent this Equipment' : 'Currently Unavailable'}

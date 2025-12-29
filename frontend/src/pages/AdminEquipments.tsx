@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
-import { Equipment } from '../types';
+import type { Equipment } from '../types';
 
 export default function AdminEquipments() {
     const [equipments, setEquipments] = useState<Equipment[]>([]);
@@ -23,7 +23,7 @@ export default function AdminEquipments() {
 
     const fetchEquipments = async () => {
         try {
-            const response = await apiClient.get<Equipment[]>('/api/equipments');
+            const response = await apiClient.get<Equipment[]>('/equipments');
             setEquipments(response.data);
         } catch (err) {
             console.error('Failed to load equipments');
@@ -35,7 +35,7 @@ export default function AdminEquipments() {
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this equipment?')) return;
         try {
-            await apiClient.delete(`/api/equipments/${id}`);
+            await apiClient.delete(`/equipments/${id}`);
             fetchEquipments();
         } catch (err) {
             alert('Failed to delete equipment');
@@ -46,9 +46,9 @@ export default function AdminEquipments() {
         e.preventDefault();
         try {
             if (editingItem) {
-                await apiClient.patch(`/api/equipments/${editingItem.id}`, formData);
+                await apiClient.patch(`/equipments/${editingItem.id}`, formData);
             } else {
-                await apiClient.post('/api/equipments', formData);
+                await apiClient.post('/equipments', formData);
             }
             setIsModalOpen(false);
             setEditingItem(null);

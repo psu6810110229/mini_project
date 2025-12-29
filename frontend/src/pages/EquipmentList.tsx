@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
-import { Equipment } from '../types';
+import type { Equipment } from '../types';
 
 export default function EquipmentList() {
     const [equipments, setEquipments] = useState<Equipment[]>([]);
@@ -14,7 +14,7 @@ export default function EquipmentList() {
 
     const fetchEquipments = async () => {
         try {
-            const response = await apiClient.get<Equipment[]>('/api/equipments');
+            const response = await apiClient.get<Equipment[]>('/equipments');
             setEquipments(response.data);
         } catch (err) {
             setError('Failed to load equipments');
@@ -53,8 +53,8 @@ export default function EquipmentList() {
                             <div className="flex justify-between items-start mb-2">
                                 <h2 className="text-xl font-semibold text-white">{item.name}</h2>
                                 <span className={`px-2 py-1 rounded text-xs font-medium ${item.status === 'AVAILABLE'
-                                        ? 'bg-green-500/10 text-green-400'
-                                        : 'bg-red-500/10 text-red-400'
+                                    ? 'bg-green-500/10 text-green-400'
+                                    : 'bg-red-500/10 text-red-400'
                                     }`}>
                                     {item.status}
                                 </span>
