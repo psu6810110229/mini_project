@@ -17,6 +17,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { Public } from '../auth/decorators/public.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { User } from '../users/entities/user.entity';
 
 @ApiTags('Equipments')
 @Controller('equipments')
@@ -47,8 +49,8 @@ export class EquipmentsController {
     @ApiOperation({ summary: 'Create new equipment (Admin only)' })
     @ApiResponse({ status: 201, description: 'Equipment created' })
     @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
-    create(@Body() createEquipmentDto: CreateEquipmentDto) {
-        return this.equipmentsService.create(createEquipmentDto);
+    create(@CurrentUser() user: User, @Body() createEquipmentDto: CreateEquipmentDto) {
+        return this.equipmentsService.create(createEquipmentDto, user.id, user.name);
     }
 
     @Patch(':id')
@@ -60,10 +62,11 @@ export class EquipmentsController {
     @ApiResponse({ status: 404, description: 'Equipment not found' })
     @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
     update(
+        @CurrentUser() user: User,
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateEquipmentDto: UpdateEquipmentDto,
     ) {
-        return this.equipmentsService.update(id, updateEquipmentDto);
+        return this.equipmentsService.update(id, updateEquipmentDto, user.id, user.name);
     }
 
     @Delete(':id')
@@ -74,7 +77,7 @@ export class EquipmentsController {
     @ApiResponse({ status: 200, description: 'Equipment deleted' })
     @ApiResponse({ status: 404, description: 'Equipment not found' })
     @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
-    remove(@Param('id', ParseUUIDPipe) id: string) {
-        return this.equipmentsService.remove(id);
+    remove(@CurrentUser() user: User, @Param('id', ParseUUIDPipe) id: string) {
+        return this.equipmentsService.remove(id, user.id, user.name);
     }
 }

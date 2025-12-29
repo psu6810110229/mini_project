@@ -10,6 +10,7 @@ import { CreateRentalDto } from './dto/create-rental.dto';
 import { UpdateRentalStatusDto } from './dto/update-rental-status.dto';
 import { RentalStatus, EquipmentStatus } from '../common/enums';
 import { Equipment } from '../equipments/entities/equipment.entity';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 @Injectable()
 export class RentalsService {
@@ -18,6 +19,7 @@ export class RentalsService {
         private rentalRepository: Repository<Rental>,
         @InjectRepository(Equipment)
         private equipmentRepository: Repository<Equipment>,
+        private auditLogsService: AuditLogsService,
     ) { }
 
     async create(userId: string, createRentalDto: CreateRentalDto): Promise<Rental> {
@@ -51,7 +53,18 @@ export class RentalsService {
             status: RentalStatus.PENDING,
         });
 
-        return this.rentalRepository.save(rental);
+        const savedRental = await this.rentalRepository.save(rental);
+
+        // Log rental creation
+        await this.auditLogsService.log(
+            userId,
+            'User',
+            'RENTAL_CREATE',
+            savedRental.id,
+            JSON.stringify({ equipmentId, startDate, endDate }),
+        );
+
+        return savedRental;
     }
 
     async checkOverlap(equipmentId: string, startDate: Date, endDate: Date, excludeRentalId?: string): Promise<boolean> {
@@ -136,7 +149,23 @@ export class RentalsService {
         }
 
         rental.status = newStatus;
-        return this.rentalRepository.save(rental);
+        const savedRental = await this.rentalRepository.save(rental);
+
+        // Log the status change to audit logs
+        await this.auditLogsService.log(
+            rental.userId,
+            rental.user?.name || 'Unknown',
+            `RENTAL_STATUS_${newStatus}`,
+            rental.id,
+            JSON.stringify({
+                previousStatus: rental.status,
+                newStatus,
+                equipmentId: rental.equipmentId,
+                equipmentName: rental.equipment?.name,
+            }),
+        );
+
+        return savedRental;
     }
 
     private validateStatusTransition(currentStatus: RentalStatus, newStatus: RentalStatus): void {

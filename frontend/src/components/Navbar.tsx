@@ -32,8 +32,9 @@ export default function Navbar() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center gap-8">
-                        <Link to="/equipments" className="text-xl font-bold text-white">
-                            Club Gear
+                        <Link to="/equipments" className="flex flex-col font-bold text-white leading-tight">
+                            <span className="text-lg">🎓 University Club Gear</span>
+                            <span className="text-sm text-gray-400">Rental System</span>
                         </Link>
 
                         <div className="hidden md:block">
