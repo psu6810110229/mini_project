@@ -27,9 +27,6 @@ export class User {
   })
   role: UserRole;
 
-  @CreateDateColumn()
-  createdAt: Date;
-
   @UpdateDateColumn()
   updatedAt: Date;
 }

@@ -4,7 +4,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_FILTER } from '@nestjs/core';
 import { envValidationSchema } from './config/env.validation';
 import { AuthModule } from './auth/auth.module';
+import { EquipmentsModule } from './equipments/equipments.module';
+import { RentalsModule } from './rentals/rentals.module';
+import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { User } from './users/entities/user.entity';
+import { Equipment } from './equipments/entities/equipment.entity';
+import { Rental } from './rentals/entities/rental.entity';
+import { AuditLog } from './audit-logs/entities/audit-log.entity';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -27,12 +33,15 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
                 username: configService.get<string>('DB_USERNAME'),
                 password: configService.get<string>('DB_PASSWORD'),
                 database: configService.get<string>('DB_DATABASE'),
-                entities: [User],
+                entities: [User, Equipment, Rental, AuditLog],
                 autoLoadEntities: true,
                 synchronize: true,
             }),
         }),
         AuthModule,
+        EquipmentsModule,
+        RentalsModule,
+        AuditLogsModule,
     ],
     controllers: [],
     providers: [
