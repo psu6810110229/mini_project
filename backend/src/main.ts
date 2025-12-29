@@ -1,46 +1,31 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule, {
-        logger: ['error', 'warn', 'log', 'debug', 'verbose'],
-    });
+  const app = await NestFactory.create(AppModule);
 
-    // Enable CORS
-    app.enableCors({
-        origin: true,
-        credentials: true,
-    });
+  // 1. Enable CORS (สำคัญมาก: อนุญาตให้ Frontend ยิงเข้ามาได้)
+  app.enableCors();
 
-    // Global Validation Pipe
-    app.useGlobalPipes(
-        new ValidationPipe({
-            whitelist: true,
-            forbidNonWhitelisted: true,
-            transform: true,
-        }),
-    );
+  // 2. Set Global Prefix (ทุก Route จะเป็น /api/xxx)
+  app.setGlobalPrefix('api');
 
-    // Global Prefix
-    app.setGlobalPrefix('api');
+  // 3. Setup Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Club Gear Rental API')
+    .setDescription('The API description')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document); // เข้าผ่าน /api ได้เลย
 
-    // Swagger Setup
-    const config = new DocumentBuilder()
-        .setTitle('Gear Rental API')
-        .setDescription('API documentation for Gear Rental System')
-        .setVersion('1.0')
-        .addBearerAuth()
-        .build();
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+  // 4. Validation Pipe (ตัวช่วยตรวจสอบข้อมูล)
+  app.useGlobalPipes(new ValidationPipe());
 
-    const port = process.env.API_PORT || 3000;
-    await app.listen(port);
-
-    Logger.log(`Application running on: http://localhost:${port}`, 'Bootstrap');
-    Logger.log(`Swagger docs: http://localhost:${port}/api/docs`, 'Bootstrap');
+  await app.listen(process.env.API_PORT || 3000);
+  console.log(`Application is running on: ${await app.getUrl()}/api`);
 }
 bootstrap();
-

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import apiClient from '../api/client'; // Ensure you created this in Phase 2
+import apiClient from '../api/client';
 import { UserPlus, User, Lock, IdCard } from 'lucide-react';
 
 const Register = () => {
@@ -11,16 +11,23 @@ const Register = () => {
     name: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false); // Added Loading state
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+
     try {
       // Matches Backend: POST /auth/register
       await apiClient.post('/auth/register', formData);
       alert('Registration successful! Please login.');
       navigate('/login');
     } catch (err: any) {
+      console.error(err);
       setError(err.response?.data?.message || 'Registration failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -28,7 +35,7 @@ const Register = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
         <h2 className="text-2xl font-bold text-center mb-6 text-blue-600">Student Register</h2>
-        {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
+        {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm">{error}</div>}
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -74,8 +81,16 @@ const Register = () => {
             </div>
           </div>
 
-          <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 flex justify-center items-center gap-2">
-            <UserPlus size={18} /> Create Account
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 flex justify-center items-center gap-2"
+          >
+            {loading ? 'Creating...' : (
+              <>
+                <UserPlus size={18} /> Create Account
+              </>
+            )}
           </button>
         </form>
         <p className="mt-4 text-center text-sm">
