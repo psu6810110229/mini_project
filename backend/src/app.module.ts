@@ -1,7 +1,12 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_FILTER } from '@nestjs/core';
 import { envValidationSchema } from './config/env.validation';
+import { AuthModule } from './auth/auth.module';
+import { User } from './users/entities/user.entity';
+import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 @Module({
     imports: [
@@ -9,7 +14,7 @@ import { envValidationSchema } from './config/env.validation';
             isGlobal: true,
             validationSchema: envValidationSchema,
             validationOptions: {
-                abortEarly: true, // Stop on first error
+                abortEarly: true,
             },
         }),
         TypeOrmModule.forRootAsync({
@@ -22,13 +27,23 @@ import { envValidationSchema } from './config/env.validation';
                 username: configService.get<string>('DB_USERNAME'),
                 password: configService.get<string>('DB_PASSWORD'),
                 database: configService.get<string>('DB_DATABASE'),
+                entities: [User],
                 autoLoadEntities: true,
-                synchronize: true, // Urgent work: auto schema sync
+                synchronize: true,
             }),
         }),
+        AuthModule,
     ],
     controllers: [],
-    providers: [],
+    providers: [
+        {
+            provide: APP_FILTER,
+            useClass: HttpExceptionFilter,
+        },
+    ],
 })
-export class AppModule { }
-
+export class AppModule implements NestModule {
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(LoggerMiddleware).forRoutes('*path');
+    }
+}
