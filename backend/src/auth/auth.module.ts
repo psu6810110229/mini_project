@@ -1,15 +1,19 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UsersModule } from '../users/users.module'; // แก้ Path ให้ถูก (ถอยกลับ 1 ขั้น)
+import { PassportModule } from '@nestjs/passport';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersModule } from '../users/users.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtStrategy } from './jwt.strategy';
+import { User } from '../users/entities/user.entity';
 
 @Module({
   imports: [
-    UsersModule, // Import User Module เพื่อใช้ User Service/Repo
+    UsersModule,
     ConfigModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -18,10 +22,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         signOptions: { expiresIn: '1d' },
       }),
     }),
-    TypeOrmModule.forFeature([]), // ถ้าใน Service เรียก Repository ตรงๆ อาจต้องใส่ User Entity ที่นี่
+    TypeOrmModule.forFeature([User]),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
-  exports: [AuthService],
+  providers: [AuthService, JwtStrategy],
+  exports: [AuthService, JwtStrategy, PassportModule],
 })
-export class AuthModule {}
+export class AuthModule { }

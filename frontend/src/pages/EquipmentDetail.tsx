@@ -36,9 +36,24 @@ export default function EquipmentDetail() {
         e.preventDefault();
         setSubmitError('');
 
+        // Date Validation
+        const now = new Date();
+        const startDateObj = new Date(startDate);
+        const endDateObj = new Date(endDate);
+
+        if (startDateObj < now) {
+            setSubmitError('Start date cannot be in the past');
+            return;
+        }
+
+        if (endDateObj <= startDateObj) {
+            setSubmitError('End date must be after start date');
+            return;
+        }
+
         // Add +07:00 for Thailand Time manually for MVP
-        const start = new Date(startDate).toISOString();
-        const end = new Date(endDate).toISOString();
+        const start = startDateObj.toISOString();
+        const end = endDateObj.toISOString();
 
         try {
             await apiClient.post('/rentals', {

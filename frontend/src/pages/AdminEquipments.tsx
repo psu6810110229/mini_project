@@ -80,7 +80,7 @@ export default function AdminEquipments() {
     if (loading) return <div className="p-8 text-white">Loading...</div>;
 
     return (
-        <div className="p-8">
+        <div className="p-8 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-8">
                 <h1 className="text-3xl font-bold text-white">Manage Equipment</h1>
                 <button

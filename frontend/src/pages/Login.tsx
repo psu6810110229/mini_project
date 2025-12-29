@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../api/client';
-import type{ AuthResponse } from '../types';
+import type { AuthResponse } from '../types';
 import { Lock, User } from 'lucide-react';
 
 const Login = () => {
@@ -43,8 +43,9 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Login</h2>
-        
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">University Club Gear Rental System</h2>
+        <h3 className="text-xl font-medium text-center text-gray-600 mb-4">Login</h3>
+
         {error && (
           <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm mb-4">
             {error}
@@ -94,11 +95,11 @@ const Login = () => {
             {loading ? 'Processing...' : 'Sign in'}
           </button>
         </form>
-        
+
         <div className="mt-4 text-center">
-           <Link to="/register" className="text-sm text-blue-600 hover:underline">
-             Need an account? Register here
-           </Link>
+          <Link to="/register" className="text-sm text-blue-600 hover:underline">
+            Need an account? Register here
+          </Link>
         </div>
       </div>
     </div>

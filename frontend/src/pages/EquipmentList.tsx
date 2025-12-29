@@ -27,7 +27,7 @@ export default function EquipmentList() {
     if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
     return (
-        <div className="p-8">
+        <div className="p-8 max-w-7xl mx-auto">
             <h1 className="text-3xl font-bold text-white mb-8">Available Equipment</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -43,6 +43,9 @@ export default function EquipmentList() {
                                     src={item.imageUrl}
                                     alt={item.name}
                                     className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
+                                    }}
                                 />
                             ) : (
                                 <span className="text-gray-500">No Image</span>
