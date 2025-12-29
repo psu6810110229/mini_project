@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../api/client';
-import { AuthResponse } from '../types';
+import type{ AuthResponse } from '../types';
 import { Lock, User } from 'lucide-react';
 
 const Login = () => {
