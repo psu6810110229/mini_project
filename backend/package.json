@@ -1,15 +1,47 @@
 {
+  "name": "gear-rental-backend",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "build": "nest build",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "prepare": "cd .. && husky install backend/.husky"
+  },
   "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
     "@nestjs/config": "^4.0.2",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/typeorm": "^11.0.0",
     "bcrypt": "^6.0.0",
+    "joi": "^17.13.3",
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
     "typeorm": "^0.3.28"
   },
   "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
     "@types/bcrypt": "^6.0.0",
-    "@types/passport-jwt": "^4.0.1"
+    "@types/node": "^22.0.0",
+    "@types/passport-jwt": "^4.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ]
   }
 }
