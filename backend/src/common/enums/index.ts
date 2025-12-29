@@ -4,24 +4,22 @@
 
 // User roles in the system
 export enum UserRole {
-    ADMIN = 'admin',
-    STAFF = 'staff',
-    CUSTOMER = 'customer',
+    ADMIN = 'ADMIN',
+    USER = 'USER',
 }
 
 // Status of a rental transaction
 export enum RentalStatus {
-    PENDING = 'pending',
-    ACTIVE = 'active',
-    RETURNED = 'returned',
-    OVERDUE = 'overdue',
-    CANCELLED = 'cancelled',
+    PENDING = 'PENDING',
+    APPROVED = 'APPROVED',
+    CHECKED_OUT = 'CHECKED_OUT',
+    RETURNED = 'RETURNED',
+    REJECTED = 'REJECTED',
+    CANCELLED = 'CANCELLED',
 }
 
 // Status of equipment availability
 export enum EquipmentStatus {
-    AVAILABLE = 'available',
-    RENTED = 'rented',
-    MAINTENANCE = 'maintenance',
-    RETIRED = 'retired',
+    AVAILABLE = 'AVAILABLE',
+    MAINTENANCE = 'MAINTENANCE',
 }
