@@ -1,14 +1,22 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { UserRole } from '../types';
+import { LogOut } from 'lucide-react';
 
 export default function Navbar() {
     const location = useLocation();
+    const navigate = useNavigate();
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
     const isAdmin = user?.role === UserRole.ADMIN;
 
     const isActive = (path: string) => {
         return location.pathname.startsWith(path) ? 'text-blue-400' : 'text-gray-300 hover:text-white';
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
     };
 
     return (
@@ -22,17 +30,20 @@ export default function Navbar() {
 
                         <div className="hidden md:block">
                             <div className="flex items-baseline space-x-4">
-                                <Link to="/equipments" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/equipments')}`}>
-                                    All Equipment
-                                </Link>
-                                <Link to="/my-rentals" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/my-rentals')}`}>
-                                    My Rentals
-                                </Link>
+                                {!isAdmin && (
+                                    <>
+                                        <Link to="/equipments" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/equipments')}`}>
+                                            All Equipment
+                                        </Link>
+                                        <Link to="/my-rentals" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/my-rentals')}`}>
+                                            My Rentals
+                                        </Link>
+                                    </>
+                                )}
 
                                 {isAdmin && (
                                     <>
-                                        <span className="text-gray-600">|</span>
-                                        <span className="text-gray-500 text-sm font-semibold uppercase tracking-wider ml-2">Admin Panel:</span>
+                                        <span className="text-gray-500 text-sm font-semibold uppercase tracking-wider">Admin Panel:</span>
                                         <Link to="/admin/equipments" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/admin/equipments')}`}>
                                             Equipments
                                         </Link>
@@ -48,8 +59,17 @@ export default function Navbar() {
                         </div>
                     </div>
 
-                    <div className="text-white text-sm">
-                        Hello, <span className="font-bold">{user?.name || 'User'}</span>
+                    <div className="flex items-center gap-4">
+                        <div className="text-white text-sm">
+                            Hello, <span className="font-bold">{user?.name || 'User'}</span>
+                        </div>
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                        >
+                            <LogOut className="h-4 w-4" />
+                            Logout
+                        </button>
                     </div>
                 </div>
             </div>

@@ -14,6 +14,9 @@ import { EquipmentsService } from './equipments.service';
 import { CreateEquipmentDto } from './dto/create-equipment.dto';
 import { UpdateEquipmentDto } from './dto/update-equipment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('Equipments')
 @Controller('equipments')
@@ -21,6 +24,7 @@ export class EquipmentsController {
     constructor(private readonly equipmentsService: EquipmentsService) { }
 
     @Get()
+    @Public()
     @ApiOperation({ summary: 'Get all equipments' })
     @ApiResponse({ status: 200, description: 'List of all equipments' })
     findAll() {
@@ -28,6 +32,7 @@ export class EquipmentsController {
     }
 
     @Get(':id')
+    @Public()
     @ApiOperation({ summary: 'Get equipment by ID' })
     @ApiResponse({ status: 200, description: 'Equipment details' })
     @ApiResponse({ status: 404, description: 'Equipment not found' })
@@ -37,19 +42,23 @@ export class EquipmentsController {
 
     @Post()
     @UseGuards(JwtAuthGuard)
+    @Roles(UserRole.ADMIN)
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Create new equipment' })
+    @ApiOperation({ summary: 'Create new equipment (Admin only)' })
     @ApiResponse({ status: 201, description: 'Equipment created' })
+    @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
     create(@Body() createEquipmentDto: CreateEquipmentDto) {
         return this.equipmentsService.create(createEquipmentDto);
     }
 
     @Patch(':id')
     @UseGuards(JwtAuthGuard)
+    @Roles(UserRole.ADMIN)
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Update equipment' })
+    @ApiOperation({ summary: 'Update equipment (Admin only)' })
     @ApiResponse({ status: 200, description: 'Equipment updated' })
     @ApiResponse({ status: 404, description: 'Equipment not found' })
+    @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
     update(
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateEquipmentDto: UpdateEquipmentDto,
@@ -59,10 +68,12 @@ export class EquipmentsController {
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard)
+    @Roles(UserRole.ADMIN)
     @ApiBearerAuth()
-    @ApiOperation({ summary: 'Delete equipment' })
+    @ApiOperation({ summary: 'Delete equipment (Admin only)' })
     @ApiResponse({ status: 200, description: 'Equipment deleted' })
     @ApiResponse({ status: 404, description: 'Equipment not found' })
+    @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
     remove(@Param('id', ParseUUIDPipe) id: string) {
         return this.equipmentsService.remove(id);
     }
