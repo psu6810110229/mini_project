@@ -1,24 +1,23 @@
 import { Module } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller'; // (Create this file if missing)
+import { UsersModule } from '../users/users.module';
+import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UsersModule } from '../users/users.module'; // แก้ Path ให้ถูก (ถอยกลับ 1 ขั้น)
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
-    UsersModule, // Import User Module เพื่อใช้ User Service/Repo
-    ConfigModule,
+    UsersModule,
+    PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'secretKey',
-        signOptions: { expiresIn: '1d' },
+        secret: configService.get<string>('JWT_SECRET'), // ต้องเพิ่มใน .env
+        signOptions: { expiresIn: '1d' }, // Token หมดอายุใน 1 วัน
       }),
     }),
-    TypeOrmModule.forFeature([]), // ถ้าใน Service เรียก Repository ตรงๆ อาจต้องใส่ User Entity ที่นี่
   ],
   controllers: [AuthController],
   providers: [AuthService],

@@ -1,18 +1,24 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'; // เพิ่มบรรทัดนี้
+import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
+import { CreateUserDto } from '../users/dto/create-user.dto';
+import { LoginDto } from './dto/login.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 409, description: 'User already exists' })
-  register(@Body() body: any) {
-    return this.authService.register(body);
+  @ApiResponse({ status: 409, description: 'Student ID already exists' })
+  async register(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.create(createUserDto);
   }
 
   @Post('login')
@@ -20,7 +26,19 @@ export class AuthController {
   @ApiOperation({ summary: 'Login with Student ID and Password' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  login(@Body() body: any) {
-    return this.authService.login(body);
+  async login(@Body() loginDto: LoginDto) {
+    // 1. Validate the user first
+    const user = await this.authService.validateUser(
+      loginDto.studentId,
+      loginDto.password,
+    );
+
+    // 2. If invalid, throw 401
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // 3. If valid, generate and return the token
+    return this.authService.login(user);
   }
 }

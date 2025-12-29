@@ -13,6 +13,7 @@ import { Rental } from './rentals/entities/rental.entity';
 import { AuditLog } from './audit-logs/entities/audit-log.entity';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { AppController } from './app.controller'; // <--- 1. Import this
 
 @Module({
     imports: [
@@ -43,7 +44,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
         RentalsModule,
         AuditLogsModule,
     ],
-    controllers: [],
+    controllers: [AppController], // <--- 2. Add this
     providers: [
         {
             provide: APP_FILTER,

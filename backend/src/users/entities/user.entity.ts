@@ -1,6 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, UpdateDateColumn, CreateDateColumn } from 'typeorm';
 
-// Defining Role here for simplicity and safety
 export enum UserRole {
   ADMIN = 'ADMIN',
   USER = 'USER',
@@ -8,17 +7,17 @@ export enum UserRole {
 
 @Entity('users')
 export class User {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn('uuid') // Defined as UUID (String)
   id: string;
 
   @Column({ unique: true })
-  studentId: string;  // Changed from email to studentId
+  studentId: string;
 
   @Column()
   password: string;
 
   @Column()
-  name: string;       // Changed from firstName/lastName to single name
+  name: string;
 
   @Column({
     type: 'enum',
@@ -26,6 +25,9 @@ export class User {
     default: UserRole.USER,
   })
   role: UserRole;
+
+  @CreateDateColumn()
+  createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
