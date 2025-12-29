@@ -26,11 +26,12 @@ async function bootstrap() {
     }),
   );
 
-  // 4. Setup Swagger
+  // 5. Setup Swagger
   const config = new DocumentBuilder()
     .setTitle('Gear Rental API')
     .setDescription('The Gear Rental API description')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
@@ -39,3 +40,4 @@ async function bootstrap() {
   console.log(`Application is running on: ${await app.getUrl()}/api`);
 }
 bootstrap();
+

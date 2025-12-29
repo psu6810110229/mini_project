@@ -1,7 +1,7 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { envValidationSchema } from './config/env.validation';
 import { AuthModule } from './auth/auth.module';
 import { EquipmentsModule } from './equipments/equipments.module';
@@ -13,7 +13,10 @@ import { Rental } from './rentals/entities/rental.entity';
 import { AuditLog } from './audit-logs/entities/audit-log.entity';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { AppController } from './app.controller'; // <--- 1. Import this
+import { AppController } from './app.controller';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { RoleGuard } from './auth/guards/role.guard';
+import { SeedsModule } from './database/seeds/seeds.module';
 
 @Module({
     imports: [
@@ -43,12 +46,21 @@ import { AppController } from './app.controller'; // <--- 1. Import this
         EquipmentsModule,
         RentalsModule,
         AuditLogsModule,
+        SeedsModule,
     ],
-    controllers: [AppController], // <--- 2. Add this
+    controllers: [AppController],
     providers: [
         {
             provide: APP_FILTER,
             useClass: HttpExceptionFilter,
+        },
+        {
+            provide: APP_GUARD,
+            useClass: JwtAuthGuard,
+        },
+        {
+            provide: APP_GUARD,
+            useClass: RoleGuard,
         },
     ],
 })
