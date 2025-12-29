@@ -5,8 +5,10 @@ import { APP_FILTER } from '@nestjs/core';
 import { envValidationSchema } from './config/env.validation';
 import { AuthModule } from './auth/auth.module';
 import { EquipmentsModule } from './equipments/equipments.module';
+import { RentalsModule } from './rentals/rentals.module';
 import { User } from './users/entities/user.entity';
 import { Equipment } from './equipments/entities/equipment.entity';
+import { Rental } from './rentals/entities/rental.entity';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -29,13 +31,14 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
                 username: configService.get<string>('DB_USERNAME'),
                 password: configService.get<string>('DB_PASSWORD'),
                 database: configService.get<string>('DB_DATABASE'),
-                entities: [User, Equipment],
+                entities: [User, Equipment, Rental],
                 autoLoadEntities: true,
                 synchronize: true,
             }),
         }),
         AuthModule,
         EquipmentsModule,
+        RentalsModule,
     ],
     controllers: [],
     providers: [
