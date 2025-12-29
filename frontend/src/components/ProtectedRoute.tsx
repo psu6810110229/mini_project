@@ -6,24 +6,24 @@ interface Props {
 }
 
 const ProtectedRoute = ({ allowedRoles }: Props) => {
-  // 1. Check for token
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
-  
+
+  // 1. ถ้าไม่มีของใน Storage -> เด้งไป Login
   if (!token || !userStr) {
     return <Navigate to="/login" replace />;
   }
 
-  // 2. Check for Role (if specified)
+  // 2. ถ้ามีการระบุ Role แต่ User ไม่ตรงเงื่อนไข
   if (allowedRoles) {
     const user = JSON.parse(userStr);
     if (!allowedRoles.includes(user.role)) {
-      // If User tries to access Admin page -> Send to their home
+      // ดีดกลับไปหน้าหลักของ User (Equipments)
       return <Navigate to="/equipments" replace />;
     }
   }
 
-  // 3. Allow access
+  // 3. ผ่าน
   return <Outlet />;
 };
 

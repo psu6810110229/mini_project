@@ -1,8 +1,11 @@
-// Constants matching your "Single Source of Truth"
+// src/types.ts
+
+// 1. Constants
 export const UserRole = {
   ADMIN: 'ADMIN',
   USER: 'USER',
 } as const;
+export type UserRole = typeof UserRole[keyof typeof UserRole];
 
 export const RentalStatus = {
   PENDING: 'PENDING',
@@ -12,16 +15,14 @@ export const RentalStatus = {
   REJECTED: 'REJECTED',
   CANCELLED: 'CANCELLED',
 } as const;
-
-export type UserRole = typeof UserRole[keyof typeof UserRole];
 export type RentalStatus = typeof RentalStatus[keyof typeof RentalStatus];
 
-// Interfaces
+// 2. Interfaces
 export interface User {
   id: string;
-  studentId: string; // Used for login
+  studentId: string;
   name: string;
-  role: typeof UserRole[keyof typeof UserRole];
+  role: UserRole;
 }
 
 export interface Equipment {
@@ -36,7 +37,7 @@ export interface Equipment {
 
 export interface Rental {
   id: string;
-  equipment: Equipment; // Nested object from relation
+  equipment: Equipment;
   startDate: string;
   endDate: string;
   status: RentalStatus;
