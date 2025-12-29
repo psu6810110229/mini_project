@@ -39,6 +39,9 @@ export default function Navbar() {
                                         <Link to="/admin/rentals" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/admin/rentals')}`}>
                                             Rentals
                                         </Link>
+                                        <Link to="/admin/audit-logs" className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/admin/audit-logs')}`}>
+                                            Logs
+                                        </Link>
                                     </>
                                 )}
                             </div>

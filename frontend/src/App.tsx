@@ -8,6 +8,7 @@ import EquipmentDetail from './pages/EquipmentDetail';
 import AdminEquipments from './pages/AdminEquipments';
 import MyRentals from './pages/MyRentals';
 import AdminRentals from './pages/AdminRentals';
+import AdminAuditLogs from './pages/AdminAuditLogs';
 
 import Layout from './components/Layout';
 
@@ -32,6 +33,7 @@ function App() {
         <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
           <Route path="/admin/equipments" element={<AdminEquipments />} />
           <Route path="/admin/rentals" element={<AdminRentals />} />
+          <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
         </Route>
       </Route>
 

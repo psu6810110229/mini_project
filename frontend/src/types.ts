@@ -48,3 +48,12 @@ export interface AuthResponse {
   accessToken: string;
   user: User;
 }
+
+export interface AuditLog {
+  id: string;
+  userId: string;
+  username: string;
+  actionType: string;
+  details?: string;
+  createdAt: string;
+}
