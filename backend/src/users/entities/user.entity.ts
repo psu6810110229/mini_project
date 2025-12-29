@@ -10,14 +10,14 @@ export class User {
   @PrimaryGeneratedColumn('uuid') // Defined as UUID (String)
   id: string;
 
-  @Column({ unique: true })
-  studentId: string;
+  @Column({ unique: true, nullable: true })
+  studentId: string;  // Changed from email to studentId
 
   @Column()
   password: string;
 
-  @Column()
-  name: string;
+  @Column({ nullable: true })
+  name: string;       // Changed from firstName/lastName to single name
 
   @Column({
     type: 'enum',
