@@ -6,26 +6,36 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // 1. Enable CORS (สำคัญมาก: อนุญาตให้ Frontend ยิงเข้ามาได้)
-  app.enableCors();
+  // 1. Enable CORS (Updated to explicitly allow React Frontend)
+  app.enableCors({
+    origin: 'http://localhost:5173', // Explicitly allow your frontend port
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
 
-  // 2. Set Global Prefix (ทุก Route จะเป็น /api/xxx)
+  // 2. Set Global Prefix
+  // NOTE: Your API endpoint is now http://localhost:3000/api/auth/login
   app.setGlobalPrefix('api');
 
-  // 3. Setup Swagger
+  // 3. Validation Pipes
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // 4. Setup Swagger
   const config = new DocumentBuilder()
-    .setTitle('Club Gear Rental API')
-    .setDescription('The API description')
+    .setTitle('Gear Rental API')
+    .setDescription('The Gear Rental API description')
     .setVersion('1.0')
-    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document); // เข้าผ่าน /api ได้เลย
+  SwaggerModule.setup('docs', app, document);
 
-  // 4. Validation Pipe (ตัวช่วยตรวจสอบข้อมูล)
-  app.useGlobalPipes(new ValidationPipe());
-
-  await app.listen(process.env.API_PORT || 3000);
+  await app.listen(3000);
   console.log(`Application is running on: ${await app.getUrl()}/api`);
 }
 bootstrap();
