@@ -22,4 +22,5 @@ export enum RentalStatus {
 export enum EquipmentStatus {
     AVAILABLE = 'AVAILABLE',
     MAINTENANCE = 'MAINTENANCE',
+    UNAVAILABLE = 'UNAVAILABLE',
 }

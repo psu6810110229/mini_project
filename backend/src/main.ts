@@ -8,7 +8,7 @@ async function bootstrap() {
 
   // 1. Enable CORS (Updated to explicitly allow React Frontend)
   app.enableCors({
-    origin: 'http://localhost:5173', // Explicitly allow your frontend port
+    origin: true, // Allow all origins for development (handles port changes like 5173 -> 5175)
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

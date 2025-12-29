@@ -8,13 +8,16 @@ import { Repository } from 'typeorm';
 import { Rental } from './entities/rental.entity';
 import { CreateRentalDto } from './dto/create-rental.dto';
 import { UpdateRentalStatusDto } from './dto/update-rental-status.dto';
-import { RentalStatus } from '../common/enums';
+import { RentalStatus, EquipmentStatus } from '../common/enums';
+import { Equipment } from '../equipments/entities/equipment.entity';
 
 @Injectable()
 export class RentalsService {
     constructor(
         @InjectRepository(Rental)
         private rentalRepository: Repository<Rental>,
+        @InjectRepository(Equipment)
+        private equipmentRepository: Repository<Equipment>,
     ) { }
 
     async create(userId: string, createRentalDto: CreateRentalDto): Promise<Rental> {
@@ -96,11 +99,43 @@ export class RentalsService {
     }
 
     async updateStatus(id: string, updateStatusDto: UpdateRentalStatusDto): Promise<Rental> {
+        console.log('--- UPDATE STATUS CALLED ---');
+        console.log('Rental ID:', id);
+        console.log('New Status:', updateStatusDto.status);
+
         const rental = await this.findOne(id);
+        const { status: newStatus } = updateStatusDto;
 
-        this.validateStatusTransition(rental.status, updateStatusDto.status);
+        console.log('Current Rental Status:', rental.status);
+        console.log('Equipment ID:', rental.equipmentId);
 
-        rental.status = updateStatusDto.status;
+        this.validateStatusTransition(rental.status, newStatus);
+
+        // Handle Stock Logic
+        if (newStatus === RentalStatus.CHECKED_OUT && rental.status !== RentalStatus.CHECKED_OUT) {
+            const equipment = await this.equipmentRepository.findOne({ where: { id: rental.equipmentId } });
+            if (equipment) {
+                if (equipment.stockQty <= 0) {
+                    throw new BadRequestException('Equipment is out of stock!');
+                }
+                equipment.stockQty -= 1;
+                if (equipment.stockQty === 0) {
+                    equipment.status = EquipmentStatus.UNAVAILABLE;
+                }
+                await this.equipmentRepository.save(equipment);
+            }
+        } else if (newStatus === RentalStatus.RETURNED && rental.status !== RentalStatus.RETURNED) {
+            const equipment = await this.equipmentRepository.findOne({ where: { id: rental.equipmentId } });
+            if (equipment) {
+                equipment.stockQty += 1;
+                if (equipment.stockQty > 0 && equipment.status === EquipmentStatus.UNAVAILABLE) {
+                    equipment.status = EquipmentStatus.AVAILABLE;
+                }
+                await this.equipmentRepository.save(equipment);
+            }
+        }
+
+        rental.status = newStatus;
         return this.rentalRepository.save(rental);
     }
 

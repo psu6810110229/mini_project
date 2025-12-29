@@ -25,7 +25,7 @@ export class Rental {
     @Column()
     equipmentId: string;
 
-    @ManyToOne(() => Equipment)
+    @ManyToOne(() => Equipment, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'equipmentId' })
     equipment: Equipment;
 

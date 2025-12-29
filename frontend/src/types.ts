@@ -32,7 +32,7 @@ export interface Equipment {
   description?: string;
   stockQty: number;
   imageUrl?: string;
-  status: 'AVAILABLE' | 'MAINTENANCE';
+  status: 'AVAILABLE' | 'MAINTENANCE' | 'UNAVAILABLE';
 }
 
 export interface Rental {
