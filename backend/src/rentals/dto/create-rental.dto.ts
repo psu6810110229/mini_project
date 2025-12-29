@@ -6,11 +6,11 @@ export class CreateRentalDto {
     @IsUUID()
     equipmentId: string;
 
-    @ApiProperty({ example: '2024-01-15T09:00:00Z' })
+    @ApiProperty({ example: '2025-12-30T09:00:00+07:00' })
     @IsDateString()
     startDate: string;
 
-    @ApiProperty({ example: '2024-01-17T18:00:00Z' })
+    @ApiProperty({ example: '2026-01-02T18:00:00+07:00' })
     @IsDateString()
     endDate: string;
 
