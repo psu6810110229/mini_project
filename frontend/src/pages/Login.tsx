@@ -17,18 +17,29 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // NOTE: This endpoint must match your friend's Backend
-      const { data } = await apiClient.post<AuthResponse>('/auth/login', {
-        studentId,
-        password,
-      });
+    //  const { data } = await apiClient.post<AuthResponse>('/auth/login', {
+    //    studentId,
+    //    password,
+    //  });
 
-      // Store in LocalStorage
-      localStorage.setItem('token', data.accessToken);
-      localStorage.setItem('user', JSON.stringify(data.user));
+// --- [เพิ่ม Mock Data เพื่อทดสอบ UI] ---
+    console.log("Mock Login Activated");
+    const mockUser = {
+      id: 'mock-user-1',
+      studentId: studentId || '6610110999',
+      name: 'Test User (Mock)',
+      role: 'USER', // หรือเปลี่ยนเป็น 'ADMIN' เพื่อเทสหน้า Admin
+    };
+    const mockToken = 'fake-jwt-token-for-testing';
+    
+    // จำลอง Delay เหมือนโหลดจริง
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    localStorage.setItem('token', mockToken);
+    localStorage.setItem('user', JSON.stringify(mockUser));
 
       // Redirect based on role
-      if (data.user.role === 'ADMIN') {
+      if (mockUser.role === 'ADMIN') {
         navigate('/admin/rentals');
       } else {
         navigate('/equipments');
