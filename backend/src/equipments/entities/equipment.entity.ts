@@ -3,8 +3,10 @@ import {
     PrimaryGeneratedColumn,
     Column,
     CreateDateColumn,
+    OneToMany,
 } from 'typeorm';
 import { EquipmentStatus } from '../../common/enums';
+import { EquipmentItem } from './equipment-item.entity';
 
 @Entity('equipments')
 export class Equipment {
@@ -30,6 +32,10 @@ export class Equipment {
     @Column({ nullable: true })
     imageUrl: string;
 
+    @OneToMany(() => EquipmentItem, (item) => item.equipment, { cascade: true, eager: true })
+    items: EquipmentItem[];
+
     @CreateDateColumn()
     createdAt: Date;
 }
+

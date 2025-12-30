@@ -22,10 +22,14 @@ function App() {
 
       {/* Protected Routes with Layout */}
       <Route element={<Layout />}>
-        {/* User Routes */}
+        {/* User Routes - Equipment viewing available to all, but rental only for users */}
         <Route element={<ProtectedRoute allowedRoles={[UserRole.USER, UserRole.ADMIN]} />}>
           <Route path="/equipments" element={<EquipmentList />} />
           <Route path="/equipments/:id" element={<EquipmentDetail />} />
+        </Route>
+
+        {/* User-only routes - Only for regular users */}
+        <Route element={<ProtectedRoute allowedRoles={[UserRole.USER]} />}>
           <Route path="/my-rentals" element={<MyRentals />} />
         </Route>
 

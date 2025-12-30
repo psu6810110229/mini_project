@@ -8,8 +8,9 @@ import { Repository } from 'typeorm';
 import { Rental } from './entities/rental.entity';
 import { CreateRentalDto } from './dto/create-rental.dto';
 import { UpdateRentalStatusDto } from './dto/update-rental-status.dto';
-import { RentalStatus, EquipmentStatus } from '../common/enums';
+import { RentalStatus, EquipmentStatus, EquipmentItemStatus } from '../common/enums';
 import { Equipment } from '../equipments/entities/equipment.entity';
+import { EquipmentItem } from '../equipments/entities/equipment-item.entity';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 @Injectable()
@@ -19,11 +20,13 @@ export class RentalsService {
         private rentalRepository: Repository<Rental>,
         @InjectRepository(Equipment)
         private equipmentRepository: Repository<Equipment>,
+        @InjectRepository(EquipmentItem)
+        private equipmentItemRepository: Repository<EquipmentItem>,
         private auditLogsService: AuditLogsService,
     ) { }
 
     async create(userId: string, createRentalDto: CreateRentalDto): Promise<Rental> {
-        const { equipmentId, startDate, endDate, requestDetails, attachmentUrl } = createRentalDto;
+        const { equipmentId, equipmentItemId, startDate, endDate, requestDetails, attachmentUrl } = createRentalDto;
 
         const start = new Date(startDate);
         const end = new Date(endDate);
@@ -37,8 +40,19 @@ export class RentalsService {
             throw new BadRequestException('Start date cannot be in the past');
         }
 
-        // Check for overlapping rentals (newStart < existingEnd) AND (newEnd > existingStart)
-        const hasOverlap = await this.checkOverlap(equipmentId, start, end);
+        // If equipmentItemId is provided, check if item is available
+        if (equipmentItemId) {
+            const item = await this.equipmentItemRepository.findOne({ where: { id: equipmentItemId } });
+            if (!item) {
+                throw new NotFoundException('Equipment item not found');
+            }
+            if (item.status !== EquipmentItemStatus.AVAILABLE) {
+                throw new BadRequestException('This item is not available for rental');
+            }
+        }
+
+        // Check for overlapping rentals
+        const hasOverlap = await this.checkOverlap(equipmentId, start, end, undefined, equipmentItemId);
         if (hasOverlap) {
             throw new BadRequestException('Equipment is already booked for this period');
         }
@@ -46,6 +60,7 @@ export class RentalsService {
         const rental = this.rentalRepository.create({
             userId,
             equipmentId,
+            equipmentItemId,
             startDate: start,
             endDate: end,
             requestDetails,
@@ -61,13 +76,13 @@ export class RentalsService {
             'User',
             'RENTAL_CREATE',
             savedRental.id,
-            JSON.stringify({ equipmentId, startDate, endDate }),
+            JSON.stringify({ equipmentId, equipmentItemId, startDate, endDate }),
         );
 
         return savedRental;
     }
 
-    async checkOverlap(equipmentId: string, startDate: Date, endDate: Date, excludeRentalId?: string): Promise<boolean> {
+    async checkOverlap(equipmentId: string, startDate: Date, endDate: Date, excludeRentalId?: string, equipmentItemId?: string): Promise<boolean> {
         const queryBuilder = this.rentalRepository
             .createQueryBuilder('rental')
             .where('rental.equipmentId = :equipmentId', { equipmentId })
@@ -76,6 +91,11 @@ export class RentalsService {
             })
             .andWhere('rental.startDate < :endDate', { endDate })
             .andWhere('rental.endDate > :startDate', { startDate });
+
+        // If checking a specific item, only check overlaps for that item
+        if (equipmentItemId) {
+            queryBuilder.andWhere('rental.equipmentItemId = :equipmentItemId', { equipmentItemId });
+        }
 
         if (excludeRentalId) {
             queryBuilder.andWhere('rental.id != :excludeRentalId', { excludeRentalId });
@@ -87,7 +107,7 @@ export class RentalsService {
 
     async findAll(): Promise<Rental[]> {
         return this.rentalRepository.find({
-            relations: ['user', 'equipment'],
+            relations: ['user', 'equipment', 'equipmentItem'],
             order: { createdAt: 'DESC' },
         });
     }
@@ -95,7 +115,7 @@ export class RentalsService {
     async findByUser(userId: string): Promise<Rental[]> {
         return this.rentalRepository.find({
             where: { userId },
-            relations: ['equipment'],
+            relations: ['equipment', 'equipmentItem'],
             order: { createdAt: 'DESC' },
         });
     }
@@ -103,7 +123,7 @@ export class RentalsService {
     async findOne(id: string): Promise<Rental> {
         const rental = await this.rentalRepository.findOne({
             where: { id },
-            relations: ['user', 'equipment'],
+            relations: ['user', 'equipment', 'equipmentItem'],
         });
         if (!rental) {
             throw new NotFoundException(`Rental with ID ${id} not found`);
@@ -124,8 +144,17 @@ export class RentalsService {
 
         this.validateStatusTransition(rental.status, newStatus);
 
-        // Handle Stock Logic
+        // Handle Stock Logic and Item Status
         if (newStatus === RentalStatus.CHECKED_OUT && rental.status !== RentalStatus.CHECKED_OUT) {
+            // If there's a specific item, mark it as RENTED
+            if (rental.equipmentItemId) {
+                const item = await this.equipmentItemRepository.findOne({ where: { id: rental.equipmentItemId } });
+                if (item) {
+                    item.status = EquipmentItemStatus.RENTED;
+                    await this.equipmentItemRepository.save(item);
+                }
+            }
+
             const equipment = await this.equipmentRepository.findOne({ where: { id: rental.equipmentId } });
             if (equipment) {
                 if (equipment.stockQty <= 0) {
@@ -138,6 +167,15 @@ export class RentalsService {
                 await this.equipmentRepository.save(equipment);
             }
         } else if (newStatus === RentalStatus.RETURNED && rental.status !== RentalStatus.RETURNED) {
+            // If there's a specific item, mark it as AVAILABLE
+            if (rental.equipmentItemId) {
+                const item = await this.equipmentItemRepository.findOne({ where: { id: rental.equipmentItemId } });
+                if (item) {
+                    item.status = EquipmentItemStatus.AVAILABLE;
+                    await this.equipmentItemRepository.save(item);
+                }
+            }
+
             const equipment = await this.equipmentRepository.findOne({ where: { id: rental.equipmentId } });
             if (equipment) {
                 equipment.stockQty += 1;
@@ -161,6 +199,7 @@ export class RentalsService {
                 previousStatus: rental.status,
                 newStatus,
                 equipmentId: rental.equipmentId,
+                equipmentItemId: rental.equipmentItemId,
                 equipmentName: rental.equipment?.name,
             }),
         );

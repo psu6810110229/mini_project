@@ -18,7 +18,10 @@ const ProtectedRoute = ({ allowedRoles }: Props) => {
   if (allowedRoles) {
     const user = JSON.parse(userStr);
     if (!allowedRoles.includes(user.role)) {
-      // ดีดกลับไปหน้าหลักของ User (Equipments)
+      // Redirect admins to admin page, users to equipment list
+      if (user.role === UserRole.ADMIN) {
+        return <Navigate to="/admin/rentals" replace />;
+      }
       return <Navigate to="/equipments" replace />;
     }
   }

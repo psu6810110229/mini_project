@@ -17,12 +17,27 @@ export const RentalStatus = {
 } as const;
 export type RentalStatus = typeof RentalStatus[keyof typeof RentalStatus];
 
+export const EquipmentItemStatus = {
+  AVAILABLE: 'AVAILABLE',
+  UNAVAILABLE: 'UNAVAILABLE',
+  RENTED: 'RENTED',
+} as const;
+export type EquipmentItemStatus = typeof EquipmentItemStatus[keyof typeof EquipmentItemStatus];
+
 // 2. Interfaces
 export interface User {
   id: string;
   studentId: string;
   name: string;
   role: UserRole;
+}
+
+export interface EquipmentItem {
+  id: string;
+  equipmentId: string;
+  itemCode: string;
+  status: EquipmentItemStatus;
+  createdAt: string;
 }
 
 export interface Equipment {
@@ -33,11 +48,14 @@ export interface Equipment {
   stockQty: number;
   imageUrl?: string;
   status: 'AVAILABLE' | 'MAINTENANCE' | 'UNAVAILABLE';
+  items?: EquipmentItem[];
 }
 
 export interface Rental {
   id: string;
   equipment: Equipment;
+  equipmentItemId?: string;
+  equipmentItem?: EquipmentItem;
   startDate: string;
   endDate: string;
   status: RentalStatus;
@@ -56,4 +74,15 @@ export interface AuditLog {
   actionType: string;
   details?: string;
   createdAt: string;
+}
+
+// Cart types
+export interface CartItem {
+  equipmentId: string;
+  equipmentName: string;
+  equipmentImage?: string;
+  itemId: string;
+  itemCode: string;
+  addedAt: number; // timestamp
+  expiresAt: number; // timestamp (addedAt + 15 minutes)
 }

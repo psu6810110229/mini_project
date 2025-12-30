@@ -13,6 +13,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { EquipmentsService } from './equipments.service';
 import { CreateEquipmentDto } from './dto/create-equipment.dto';
 import { UpdateEquipmentDto } from './dto/update-equipment.dto';
+import { UpdateItemStatusDto } from './dto/update-item-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
@@ -67,6 +68,22 @@ export class EquipmentsController {
         @Body() updateEquipmentDto: UpdateEquipmentDto,
     ) {
         return this.equipmentsService.update(id, updateEquipmentDto, user.id, user.name);
+    }
+
+    @Patch('items/:itemId/status')
+    @UseGuards(JwtAuthGuard)
+    @Roles(UserRole.ADMIN)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Update individual item status (Admin only)' })
+    @ApiResponse({ status: 200, description: 'Item status updated' })
+    @ApiResponse({ status: 404, description: 'Item not found' })
+    @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+    updateItemStatus(
+        @CurrentUser() user: User,
+        @Param('itemId', ParseUUIDPipe) itemId: string,
+        @Body() updateItemStatusDto: UpdateItemStatusDto,
+    ) {
+        return this.equipmentsService.updateItemStatus(itemId, updateItemStatusDto.status, user.id, user.name);
     }
 
     @Delete(':id')

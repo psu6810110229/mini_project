@@ -32,19 +32,19 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-center mb-6 text-blue-600">Student Register</h2>
-        {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm">{error}</div>}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 p-4">
+      <div className="max-w-md w-full bg-white/70 backdrop-blur-md rounded-2xl shadow-lg p-8 border border-gray-300/40">
+        <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">Create Account</h2>
+        {error && <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4 text-sm border border-red-200 backdrop-blur font-semibold">{error}</div>}
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Student ID</label>
-            <div className="relative mt-1">
-              <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            <label className="block text-sm font-bold text-gray-700 mb-2">Student ID</label>
+            <div className="relative">
+              <User className="absolute left-3 top-3.5 h-5 w-5 text-gray-500" />
               <input 
                 required
-                className="pl-10 w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-500"
+                className="pl-10 w-full bg-white/70 border border-gray-300 rounded-lg py-3 px-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent backdrop-blur transition-all"
                 placeholder="681xxxxxxx"
                 value={formData.studentId}
                 onChange={e => setFormData({...formData, studentId: e.target.value})}
@@ -53,12 +53,12 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Full Name</label>
-            <div className="relative mt-1">
-              <IdCard className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            <label className="block text-sm font-bold text-gray-700 mb-2">Full Name</label>
+            <div className="relative">
+              <IdCard className="absolute left-3 top-3.5 h-5 w-5 text-gray-500" />
               <input 
                 required
-                className="pl-10 w-full border rounded-lg p-2"
+                className="pl-10 w-full bg-white/70 border border-gray-300 rounded-lg py-3 px-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent backdrop-blur transition-all"
                 placeholder="Somchai Jai-dee"
                 value={formData.name}
                 onChange={e => setFormData({...formData, name: e.target.value})}
@@ -67,13 +67,13 @@ const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <div className="relative mt-1">
-              <Lock className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            <label className="block text-sm font-bold text-gray-700 mb-2">Password</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3.5 h-5 w-5 text-gray-500" />
               <input 
                 type="password"
                 required
-                className="pl-10 w-full border rounded-lg p-2"
+                className="pl-10 w-full bg-white/70 border border-gray-300 rounded-lg py-3 px-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent backdrop-blur transition-all"
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={e => setFormData({...formData, password: e.target.value})}
@@ -84,7 +84,7 @@ const Register = () => {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 flex justify-center items-center gap-2"
+            className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg shadow-lg font-bold flex justify-center items-center gap-2 transition-all transform hover:scale-105 hover:shadow-xl"
           >
             {loading ? 'Creating...' : (
               <>
@@ -93,8 +93,8 @@ const Register = () => {
             )}
           </button>
         </form>
-        <p className="mt-4 text-center text-sm">
-          Already have an account? <Link to="/login" className="text-blue-600 font-bold">Login</Link>
+        <p className="mt-6 text-center text-sm text-gray-700">
+          Already have an account? <Link to="/login" className="text-gray-600 font-bold hover:text-gray-700 transition-colors">Login</Link>
         </p>
       </div>
     </div>

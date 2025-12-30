@@ -6,6 +6,11 @@ export class CreateRentalDto {
     @IsUUID()
     equipmentId: string;
 
+    @ApiPropertyOptional({ example: 'uuid-of-equipment-item' })
+    @IsOptional()
+    @IsUUID()
+    equipmentItemId?: string;
+
     @ApiProperty({ example: '2025-12-30T09:00:00+07:00' })
     @IsDateString()
     startDate: string;
@@ -24,3 +29,4 @@ export class CreateRentalDto {
     @IsString()
     attachmentUrl?: string;
 }
+

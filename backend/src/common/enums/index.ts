@@ -24,3 +24,10 @@ export enum EquipmentStatus {
     MAINTENANCE = 'MAINTENANCE',
     UNAVAILABLE = 'UNAVAILABLE',
 }
+
+// Status of individual equipment item
+export enum EquipmentItemStatus {
+    AVAILABLE = 'AVAILABLE',
+    UNAVAILABLE = 'UNAVAILABLE',
+    RENTED = 'RENTED',
+}

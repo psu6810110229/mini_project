@@ -9,6 +9,7 @@ import { RentalsModule } from './rentals/rentals.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { User } from './users/entities/user.entity';
 import { Equipment } from './equipments/entities/equipment.entity';
+import { EquipmentItem } from './equipments/entities/equipment-item.entity';
 import { Rental } from './rentals/entities/rental.entity';
 import { AuditLog } from './audit-logs/entities/audit-log.entity';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
@@ -37,7 +38,7 @@ import { SeedsModule } from './database/seeds/seeds.module';
                 username: configService.get<string>('DB_USERNAME'),
                 password: configService.get<string>('DB_PASSWORD'),
                 database: configService.get<string>('DB_DATABASE'),
-                entities: [User, Equipment, Rental, AuditLog],
+                entities: [User, Equipment, EquipmentItem, Rental, AuditLog],
                 autoLoadEntities: true,
                 synchronize: true,
             }),

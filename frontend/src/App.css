@@ -1,6 +1,7 @@
 :root {
-  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  --gradient-dark: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  --gradient-primary: linear-gradient(135deg, #4b5563 0%, #2d3748 100%);
+  --gradient-secondary: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  --gradient-light: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   --glass-bg: rgba(255, 255, 255, 0.1);
   --glass-border: rgba(255, 255, 255, 0.2);
 }
@@ -13,12 +14,12 @@
 }
 
 html {
-  background: var(--gradient-dark);
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%);
   min-height: 100vh;
 }
 
 body {
-  background: var(--gradient-dark);
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%);
 }
 
 .logo {

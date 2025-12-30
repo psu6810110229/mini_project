@@ -9,6 +9,7 @@ import {
 import { RentalStatus } from '../../common/enums';
 import { User } from '../../users/entities/user.entity';
 import { Equipment } from '../../equipments/entities/equipment.entity';
+import { EquipmentItem } from '../../equipments/entities/equipment-item.entity';
 
 @Entity('rentals')
 export class Rental {
@@ -28,6 +29,13 @@ export class Rental {
     @ManyToOne(() => Equipment, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'equipmentId' })
     equipment: Equipment;
+
+    @Column({ nullable: true })
+    equipmentItemId: string;
+
+    @ManyToOne(() => EquipmentItem, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'equipmentItemId' })
+    equipmentItem: EquipmentItem;
 
     @Column({ type: 'timestamp' })
     startDate: Date;
