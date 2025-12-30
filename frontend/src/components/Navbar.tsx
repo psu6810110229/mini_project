@@ -19,6 +19,7 @@ export default function Navbar() {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('rememberMe');
+        localStorage.removeItem('rentalCart'); // Clear cart on logout to prevent data leak between users
         setShowLogoutModal(false);
         navigate('/login');
     };
