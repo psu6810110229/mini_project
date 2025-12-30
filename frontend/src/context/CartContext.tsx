@@ -1,8 +1,15 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { CartItem } from '../types';
 
-const CART_STORAGE_KEY = 'equipment_cart';
-const CART_EXPIRY_MINUTES = 15;
+// Cart item interface - represents a reserved equipment item
+export interface CartItem {
+    itemId: string;          // The specific equipment item ID
+    itemCode: string;        // Human-readable item code
+    equipmentId: string;     // The equipment type ID
+    equipmentName: string;   // Name of the equipment
+    equipmentImage?: string; // Optional image URL
+    addedAt?: number;        // When it was added
+    expiresAt: number;       // Timestamp when reservation expires
+}
 
 interface CartContextType {
     cartItems: CartItem[];
@@ -15,50 +22,43 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: ReactNode }) {
-    const [cartItems, setCartItems] = useState<CartItem[]>([]);
+const CART_STORAGE_KEY = 'rentalCart';
+const CART_EXPIRY_MINUTES = 15;
 
-    // Load cart from localStorage and filter expired items
-    const loadCart = useCallback(() => {
-        try {
-            const stored = localStorage.getItem(CART_STORAGE_KEY);
-            if (stored) {
-                const items: CartItem[] = JSON.parse(stored);
+export function CartProvider({ children }: { children: ReactNode }) {
+    const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+        // Load from localStorage on initial render
+        const saved = localStorage.getItem(CART_STORAGE_KEY);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved) as CartItem[];
+                // Filter out expired items
                 const now = Date.now();
-                const validItems = items.filter(item => item.expiresAt > now);
-                if (validItems.length !== items.length) {
-                    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(validItems));
-                }
-                return validItems;
+                return parsed.filter(item => item.expiresAt > now);
+            } catch {
+                return [];
             }
-        } catch (e) {
-            console.error('Failed to load cart', e);
         }
         return [];
-    }, []);
+    });
 
-    // Initialize cart on mount
-    useEffect(() => {
-        setCartItems(loadCart());
-    }, [loadCart]);
-
-    // Save cart to localStorage whenever it changes
+    // Save to localStorage whenever cart changes
     useEffect(() => {
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
     }, [cartItems]);
 
-    // Auto-clean expired items every 30 seconds
+    // Remove expired items periodically
     useEffect(() => {
         const interval = setInterval(() => {
             const now = Date.now();
             setCartItems(prev => {
-                const validItems = prev.filter(item => item.expiresAt > now);
-                if (validItems.length !== prev.length) {
-                    return validItems;
+                const filtered = prev.filter(item => item.expiresAt > now);
+                if (filtered.length !== prev.length) {
+                    return filtered;
                 }
                 return prev;
             });
-        }, 30000);
+        }, 1000);
 
         return () => clearInterval(interval);
     }, []);
@@ -114,9 +114,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
 }
 
-export function useCart() {
+export function useCart(): CartContextType {
     const context = useContext(CartContext);
-    if (context === undefined) {
+    if (!context) {
         throw new Error('useCart must be used within a CartProvider');
     }
     return context;
