@@ -35,7 +35,10 @@ export default function Navbar() {
                     <div className="flex items-center gap-8">
                         <Link to={isAdmin ? "/admin/rentals" : "/equipments"} className="flex flex-col font-bold leading-tight hover:opacity-80 transition-opacity">
                             <span className="text-lg bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">🎓 University Club Gear</span>
-                            <span className="text-xs text-gray-700">{isAdmin ? "Admin Panel" : "Rental System"}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-700">{isAdmin ? "Admin Panel" : "Rental System"}</span>
+                                <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] rounded-full font-bold">V.1.0</span>
+                            </div>
                         </Link>
 
                         <div className="hidden md:block">

@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 const Equipments = () => {
   return (
@@ -8,7 +8,7 @@ const Equipments = () => {
           <h1 className="text-3xl font-bold text-gray-900">Available Equipments</h1>
           <span className="text-sm text-gray-600">Showing all items</span>
         </div>
-        
+
         {/* Placeholder Content */}
         <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg p-8 text-center border border-gray-300/40">
           <p className="text-xl text-gray-700">🛠️ Shelf is empty (Waiting for API integration)</p>

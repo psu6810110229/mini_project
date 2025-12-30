@@ -62,7 +62,7 @@ const Login = () => {
                 value={studentId}
                 onChange={(e) => setStudentId(e.target.value)}
                 className="pl-10 w-full bg-white/70 border border-gray-300 rounded-lg py-3 px-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent backdrop-blur transition-all"
-                placeholder="6xxxxxxxxx"
+                placeholder="Student ID"
               />
             </div>
           </div>
