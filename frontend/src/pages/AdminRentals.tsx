@@ -76,9 +76,30 @@ export default function AdminRentals() {
                                             <span className="ml-2 text-xs text-gray-500">(ID: {rental.equipmentItem.itemCode})</span>
                                         )}
                                     </td>
-                                    <td className="p-4 text-sm text-gray-600">
-                                        <div>From: {new Date(rental.startDate).toLocaleString('th-TH')}</div>
-                                        <div>To: {new Date(rental.endDate).toLocaleString('th-TH')}</div>
+                                    <td className="p-4">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <span className="w-14 text-gray-500 font-medium">Start:</span>
+                                                <span className="text-gray-900 font-medium">
+                                                    {new Date(rental.startDate).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                </span>
+                                                <span className="text-gray-500 text-xs">
+                                                    {new Date(rental.startDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <span className="w-14 text-gray-500 font-medium">End:</span>
+                                                <span className="text-gray-900 font-medium">
+                                                    {new Date(rental.endDate).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                </span>
+                                                <span className="text-gray-500 text-xs">
+                                                    {new Date(rental.endDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <div className="text-xs text-blue-600 font-medium">
+                                                📅 {Math.ceil((new Date(rental.endDate).getTime() - new Date(rental.startDate).getTime()) / (1000 * 60 * 60 * 24))} days
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="p-4">
                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusColor(rental.status)}`}>
