@@ -4,7 +4,7 @@ import apiClient from '../api/client';
 import type { Equipment, EquipmentItem } from '../types';
 import { UserRole, EquipmentItemStatus } from '../types';
 import { useCart } from '../context/CartContext';
-import { ClipboardList, Check, Plus, X } from 'lucide-react';
+import { ClipboardList, Check, Plus, X, ArrowLeft, Package, ShoppingBag, AlertTriangle } from 'lucide-react';
 
 export default function EquipmentDetail() {
     const { id } = useParams();
@@ -14,6 +14,10 @@ export default function EquipmentDetail() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [addedMessage, setAddedMessage] = useState('');
+
+    // Confirmation modal
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<{ type: string; itemId: string; itemCode: string } | null>(null);
 
     // Check if user is admin
     const userStr = localStorage.getItem('user');
@@ -47,8 +51,21 @@ export default function EquipmentDetail() {
         });
 
         if (success) {
-            setAddedMessage(`Item ${item.itemCode} added to rental list!`);
+            setAddedMessage(`เพิ่ม ${item.itemCode} ลงในรายการยืมแล้ว!`);
             setTimeout(() => setAddedMessage(''), 2000);
+        }
+    };
+
+    const showRemoveConfirmation = (itemId: string, itemCode: string) => {
+        setConfirmAction({ type: 'remove', itemId, itemCode });
+        setShowConfirmModal(true);
+    };
+
+    const handleConfirmedRemove = () => {
+        if (confirmAction) {
+            removeFromCart(confirmAction.itemId);
+            setShowConfirmModal(false);
+            setConfirmAction(null);
         }
     };
 
@@ -58,154 +75,215 @@ export default function EquipmentDetail() {
 
     const inCartItems = equipment?.items?.filter(item => isInCart(item.id)) || [];
 
-    if (loading) return <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center"><div className="text-gray-700">Loading...</div></div>;
-    if (error || !equipment) return <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center"><div className="text-red-600">{error || 'Equipment not found'}</div></div>;
-
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-            <div className="p-8 max-w-4xl mx-auto">
-                <button
-                    onClick={() => navigate('/equipments')}
-                    className="mb-8 text-gray-700 hover:text-gray-900 flex items-center gap-2 font-semibold transition-colors"
-                >
-                    ← Back to List
-                </button>
-
-                {/* Success Message */}
-                {addedMessage && (
-                    <div className="mb-6 flex gap-3 bg-green-50 border border-green-200 rounded-xl p-4 shadow-lg animate-slide-in">
-                        <Check className="h-5 w-5 text-green-700 flex-shrink-0" />
-                        <p className="text-green-700 font-semibold">{addedMessage}</p>
-                    </div>
-                )}
-
-                <div className="bg-white/60 backdrop-blur-md rounded-2xl overflow-hidden border border-gray-300/40 shadow-lg animate-fade-in">
-                    <div className="grid grid-cols-1 md:grid-cols-2">
-                        {/* Image Section - White Background */}
-                        <div className="h-64 md:h-auto bg-white flex items-center justify-center border-b md:border-b-0 md:border-r border-gray-100">
-                            {equipment.imageUrl ? (
-                                <img
-                                    src={equipment.imageUrl}
-                                    alt={equipment.name}
-                                    className="w-full h-full object-contain p-8"
-                                />
-                            ) : (
-                                <span className="text-gray-500 text-lg">No Image Available</span>
-                            )}
-                        </div>
-
-                        {/* Details Section */}
-                        <div className="p-8">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{equipment.name}</h1>
-                                    <span className="text-gray-600 bg-gray-200/60 px-3 py-1 rounded-full text-sm font-semibold">
-                                        {equipment.category}
-                                    </span>
-                                </div>
-                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${equipment.status === 'AVAILABLE'
-                                    ? 'bg-green-100 text-green-700 border border-green-200'
-                                    : 'bg-red-100 text-red-700 border border-red-200'
-                                    }`}>
-                                    {equipment.status}
-                                </span>
-                            </div>
-
-                            <div className="space-y-4 mb-8">
-                                <div className="flex justify-between py-3 border-b border-gray-300">
-                                    <span className="text-gray-600">Available Items</span>
-                                    <span className="text-gray-900 font-semibold">
-                                        {availableItems.length}/{equipment.items?.length || equipment.stockQty} units
-                                    </span>
-                                </div>
-                            </div>
-
-                            {!isAdmin && (
-                                <>
-                                    {/* Available Items to Add */}
-                                    {availableItems.length > 0 && (
-                                        <div className="mb-6">
-                                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Select an Item to Rent</h3>
-                                            <div className="grid grid-cols-2 gap-3">
-                                                {availableItems.map((item, index) => (
-                                                    <button
-                                                        key={item.id}
-                                                        onClick={() => handleAddToCart(item)}
-                                                        className="flex items-center justify-between bg-white border border-gray-200 hover:border-gray-400 rounded-xl p-3 transition-all duration-200 hover:shadow-md animate-fade-in group"
-                                                        style={{ animationDelay: `${index * 50}ms` }}
-                                                    >
-                                                        <div className="text-left">
-                                                            <span className="font-bold text-gray-900">ID: {item.itemCode}</span>
-                                                            <span className="block text-xs text-green-600 font-medium">Available</span>
-                                                        </div>
-                                                        <div className="bg-gray-100 group-hover:bg-gray-700 group-hover:text-white p-2 rounded-lg transition-colors">
-                                                            <Plus className="h-4 w-4" />
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Items Already in Cart */}
-                                    {inCartItems.length > 0 && (
-                                        <div className="mb-6">
-                                            <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                                <ClipboardList className="h-5 w-5" />
-                                                In Your Rental List
-                                            </h3>
-                                            <div className="grid grid-cols-2 gap-3">
-                                                {inCartItems.map((item) => (
-                                                    <div
-                                                        key={item.id}
-                                                        className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-3"
-                                                    >
-                                                        <div className="text-left">
-                                                            <span className="font-bold text-gray-900">ID: {item.itemCode}</span>
-                                                            <span className="block text-xs text-green-600 font-medium">Reserved</span>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => removeFromCart(item.id)}
-                                                            className="bg-red-100 hover:bg-red-200 text-red-600 p-2 rounded-lg transition-colors"
-                                                            title="Remove from list"
-                                                        >
-                                                            <X className="h-4 w-4" />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* No Items Available */}
-                                    {availableItems.length === 0 && inCartItems.length === 0 && (
-                                        <div className="bg-gray-100/70 backdrop-blur p-6 rounded-xl border border-gray-300 text-center">
-                                            <p className="text-gray-600 font-medium">
-                                                😔 No items available for rent at the moment
-                                            </p>
-                                        </div>
-                                    )}
-
-                                    {/* Rental List Hint */}
-                                    {inCartItems.length > 0 && (
-                                        <p className="text-sm text-gray-500 text-center">
-                                            Click the rental list button at the bottom right to confirm your rental
-                                        </p>
-                                    )}
-                                </>
-                            )}
-
-                            {isAdmin && (
-                                <div className="bg-gray-100/70 backdrop-blur p-6 rounded-xl border border-gray-300">
-                                    <p className="text-center text-gray-600 font-medium">
-                                        👨‍💼 Admin View Only - Rental functionality is disabled
-                                    </p>
-                                </div>
-                            )}
-                        </div>
+    if (loading) {
+        return (
+            <div className="min-h-[80vh] flex items-center justify-center">
+                <div className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl p-8 border border-white/20 shadow-xl">
+                    <div className="flex items-center gap-3">
+                        <svg className="animate-spin h-6 w-6 text-white" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        <span className="text-white font-medium">กำลังโหลด...</span>
                     </div>
                 </div>
             </div>
+        );
+    }
+
+    if (error || !equipment) {
+        return (
+            <div className="min-h-[80vh] flex items-center justify-center">
+                <div className="backdrop-blur-2xl bg-red-900/50 rounded-2xl p-8 border border-red-500/30 shadow-xl">
+                    <p className="text-red-200 font-medium">{error || 'ไม่พบอุปกรณ์'}</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-4 md:p-8 max-w-4xl mx-auto">
+            <button
+                onClick={() => navigate('/equipments')}
+                className="mb-8 text-white hover:text-white/80 flex items-center gap-2 font-semibold transition-all duration-200 group"
+                style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}
+            >
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-2 transition-transform duration-200" />
+                กลับไปหน้ารายการ
+            </button>
+
+            {/* Success Message */}
+            {addedMessage && (
+                <div className="mb-6 flex gap-3 backdrop-blur-2xl bg-green-900/50 border border-green-500/30 rounded-xl p-4 shadow-lg animate-slide-in">
+                    <Check className="h-5 w-5 text-green-300 flex-shrink-0" />
+                    <p className="text-green-200 font-semibold">{addedMessage}</p>
+                </div>
+            )}
+
+            {/* Equipment Card */}
+            <div className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl overflow-hidden border border-white/20 shadow-xl animate-fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2">
+                    {/* Image Section - White background */}
+                    <div className="h-64 md:h-auto bg-white flex items-center justify-center border-b md:border-b-0 md:border-r border-white/10 overflow-hidden">
+                        {equipment.imageUrl ? (
+                            <img
+                                src={equipment.imageUrl}
+                                alt={equipment.name}
+                                className="w-full h-full object-contain p-8 hover:scale-110 transition-transform duration-500"
+                            />
+                        ) : (
+                            <div className="flex flex-col items-center gap-2 text-gray-400">
+                                <Package className="w-16 h-16" />
+                                <span className="text-sm">ไม่มีรูปภาพ</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Details Section */}
+                    <div className="p-6 md:p-8">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{equipment.name}</h1>
+                                <span className="text-white/70 backdrop-blur-xl bg-white/10 px-3 py-1 rounded-full text-sm font-medium border border-white/20">
+                                    {equipment.category}
+                                </span>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-sm font-bold ${equipment.status === 'AVAILABLE'
+                                    ? 'bg-green-600 text-white'
+                                    : 'bg-red-600 text-white'
+                                }`}>
+                                {equipment.status === 'AVAILABLE' ? 'พร้อมใช้งาน' : equipment.status}
+                            </span>
+                        </div>
+
+                        <div className="space-y-4 mb-8">
+                            <div className="flex justify-between py-3 border-b border-white/20">
+                                <span className="text-white/70">รายการที่ว่าง</span>
+                                <span className="text-white font-semibold">
+                                    {availableItems.length}/{equipment.items?.length || equipment.stockQty} ชิ้น
+                                </span>
+                            </div>
+                        </div>
+
+                        {!isAdmin && (
+                            <>
+                                {/* Available Items to Add */}
+                                {availableItems.length > 0 && (
+                                    <div className="mb-6">
+                                        <h3 className="text-lg font-semibold text-white mb-3">เลือกรายการที่ต้องการยืม</h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {availableItems.map((item, index) => (
+                                                <button
+                                                    key={item.id}
+                                                    onClick={() => handleAddToCart(item)}
+                                                    className="flex items-center justify-between backdrop-blur-2xl bg-slate-800/50 border border-white/20 hover:border-blue-500/50 rounded-xl p-3 transition-all duration-300 hover:bg-slate-700/50 hover:scale-[1.02] group animate-fade-in"
+                                                    style={{ animationDelay: `${index * 50}ms` }}
+                                                >
+                                                    <div className="text-left">
+                                                        <span className="font-bold text-white">รหัส: {item.itemCode}</span>
+                                                        <span className="block text-xs text-green-400 font-medium">ว่าง</span>
+                                                    </div>
+                                                    <div className="backdrop-blur-xl bg-white/10 group-hover:bg-blue-600 p-2 rounded-lg transition-all duration-300 group-hover:scale-110">
+                                                        <Plus className="h-4 w-4 text-white" />
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Items Already in Cart */}
+                                {inCartItems.length > 0 && (
+                                    <div className="mb-6">
+                                        <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                                            <ShoppingBag className="h-5 w-5" />
+                                            ในรายการยืมของคุณ
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {inCartItems.map((item) => (
+                                                <div
+                                                    key={item.id}
+                                                    className="flex items-center justify-between backdrop-blur-2xl bg-green-900/30 border border-green-500/30 rounded-xl p-3 animate-fade-in"
+                                                >
+                                                    <div className="text-left">
+                                                        <span className="font-bold text-white">รหัส: {item.itemCode}</span>
+                                                        <span className="block text-xs text-green-300 font-medium">จองแล้ว</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => showRemoveConfirmation(item.id, item.itemCode)}
+                                                        className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-all duration-200 hover:scale-110"
+                                                        title="ลบออกจากรายการ"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* No Items Available */}
+                                {availableItems.length === 0 && inCartItems.length === 0 && (
+                                    <div className="backdrop-blur-2xl bg-slate-800/50 p-6 rounded-xl border border-white/20 text-center">
+                                        <Package className="w-12 h-12 mx-auto mb-3 text-white/40" />
+                                        <p className="text-white/70 font-medium">
+                                            ไม่มีรายการว่างให้ยืมในขณะนี้
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Rental List Hint */}
+                                {inCartItems.length > 0 && (
+                                    <p className="text-sm text-white/60 text-center flex items-center justify-center gap-2">
+                                        <ShoppingBag className="w-4 h-4" />
+                                        คลิกปุ่มรายการยืมที่มุมขวาล่างเพื่อยืนยัน
+                                    </p>
+                                )}
+                            </>
+                        )}
+
+                        {isAdmin && (
+                            <div className="backdrop-blur-2xl bg-slate-800/50 p-6 rounded-xl border border-white/20">
+                                <p className="text-center text-white/70 font-medium">
+                                    👨‍💼 โหมดแอดมิน - ไม่สามารถยืมอุปกรณ์ได้
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Confirmation Modal */}
+            {showConfirmModal && confirmAction && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fade-in" onClick={() => setShowConfirmModal(false)} />
+                    <div className="relative backdrop-blur-2xl bg-gradient-to-b from-slate-800/95 to-slate-900/95 rounded-3xl shadow-2xl max-w-sm w-full mx-4 p-6 animate-scale-in border border-white/20">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 flex items-center justify-center">
+                                <AlertTriangle className="h-8 w-8 text-amber-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">ยืนยันการลบ</h3>
+                            <p className="text-white/60">
+                                คุณต้องการลบ <span className="text-white font-semibold">{confirmAction.itemCode}</span> ออกจากรายการยืมใช่ไหม?
+                            </p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/20"
+                            >
+                                ยกเลิก
+                            </button>
+                            <button
+                                onClick={handleConfirmedRemove}
+                                className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg"
+                            >
+                                ยืนยัน
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 @keyframes fade-in {
@@ -222,6 +300,13 @@ export default function EquipmentDetail() {
                 }
                 .animate-slide-in {
                     animation: slide-in 0.3s ease-out forwards;
+                }
+                @keyframes scale-in {
+                    from { opacity: 0; transform: scale(0.9); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                .animate-scale-in {
+                    animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
             `}</style>
         </div>

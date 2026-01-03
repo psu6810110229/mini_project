@@ -8,8 +8,13 @@ import {
     Delete,
     UseGuards,
     ParseUUIDPipe,
+    UseInterceptors,
+    UploadedFile,
+    Res,
+    BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { EquipmentsService } from './equipments.service';
 import { CreateEquipmentDto } from './dto/create-equipment.dto';
 import { UpdateEquipmentDto } from './dto/update-equipment.dto';
@@ -20,6 +25,17 @@ import { UserRole } from '../users/entities/user.entity';
 import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { Response } from 'express';
+import { existsSync, mkdirSync } from 'fs';
+
+// Ensure uploads directory exists
+const uploadsDir = join(process.cwd(), 'uploads');
+if (!existsSync(uploadsDir)) {
+    mkdirSync(uploadsDir, { recursive: true });
+}
 
 @ApiTags('Equipments')
 @Controller('equipments')
@@ -32,6 +48,18 @@ export class EquipmentsController {
     @ApiResponse({ status: 200, description: 'List of all equipments' })
     findAll() {
         return this.equipmentsService.findAll();
+    }
+
+    // IMPORTANT: This route MUST come BEFORE @Get(':id') to avoid 'images' being treated as an ID
+    @Get('images/:filename')
+    @Public()
+    @ApiOperation({ summary: 'Get equipment image by filename' })
+    getImage(@Param('filename') filename: string, @Res() res: Response) {
+        const filePath = join(uploadsDir, filename);
+        if (!existsSync(filePath)) {
+            return res.status(404).json({ message: 'Image not found' });
+        }
+        return res.sendFile(filePath);
     }
 
     @Get(':id')
@@ -52,6 +80,55 @@ export class EquipmentsController {
     @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
     create(@CurrentUser() user: User, @Body() createEquipmentDto: CreateEquipmentDto) {
         return this.equipmentsService.create(createEquipmentDto, user.id, user.name);
+    }
+
+    @Post(':id/upload-image')
+    @UseGuards(JwtAuthGuard)
+    @Roles(UserRole.ADMIN)
+    @ApiBearerAuth()
+    @UseInterceptors(FileInterceptor('image', {
+        storage: diskStorage({
+            destination: uploadsDir,
+            filename: (_req: any, file: Express.Multer.File, callback: (error: Error | null, filename: string) => void) => {
+                const uniqueName = `${uuidv4()}${extname(file.originalname)}`;
+                callback(null, uniqueName);
+            },
+        }),
+        fileFilter: (_req: any, file: Express.Multer.File, callback: any) => {
+            if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+                return callback(new BadRequestException('Only image files are allowed!'), false);
+            }
+            callback(null, true);
+        },
+        limits: {
+            fileSize: 5 * 1024 * 1024, // 5MB limit
+        },
+    }))
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                image: {
+                    type: 'string',
+                    format: 'binary',
+                },
+            },
+        },
+    })
+    @ApiOperation({ summary: 'Upload image for equipment (Admin only)' })
+    @ApiResponse({ status: 200, description: 'Image uploaded successfully' })
+    @ApiResponse({ status: 404, description: 'Equipment not found' })
+    async uploadImage(
+        @CurrentUser() user: User,
+        @Param('id', ParseUUIDPipe) id: string,
+        @UploadedFile() file: Express.Multer.File,
+    ) {
+        if (!file) {
+            throw new BadRequestException('No file uploaded');
+        }
+        const imageUrl = `/api/equipments/images/${file.filename}`;
+        return this.equipmentsService.update(id, { imageUrl }, user.id, user.name);
     }
 
     @Patch(':id')

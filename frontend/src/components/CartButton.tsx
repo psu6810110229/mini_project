@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardList, X, Clock, Trash2, Calendar, AlertTriangle, FileText } from 'lucide-react';
+import { ClipboardList, X, Clock, Trash2, Calendar, AlertTriangle, FileText, ShoppingBag, CheckCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import apiClient from '../api/client';
 
@@ -31,6 +31,10 @@ export default function RentalListButton() {
     const [showOverlapModal, setShowOverlapModal] = useState(false);
     const [checkingOverlap, setCheckingOverlap] = useState(false);
 
+    // Confirmation modal
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<{ type: string; itemId?: string } | null>(null);
+
     // State for countdown timers
     const [, setTick] = useState(0);
     useEffect(() => {
@@ -43,8 +47,8 @@ export default function RentalListButton() {
     useEffect(() => {
         if (isOpen && !startDate) {
             const now = new Date();
-            now.setMinutes(now.getMinutes() + 30); // Start 30 minutes from now
-            const defaultEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days later
+            now.setMinutes(now.getMinutes() + 30);
+            const defaultEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
             setStartDate(formatDateTimeLocal(now));
             setEndDate(formatDateTimeLocal(defaultEnd));
@@ -69,7 +73,7 @@ export default function RentalListButton() {
 
     const formatDisplayDate = (dateStr: string) => {
         const date = new Date(dateStr);
-        return date.toLocaleDateString('th-TH', {
+        return date.toLocaleDateString('en-US', {
             day: '2-digit',
             month: 'short',
             year: 'numeric',
@@ -86,7 +90,6 @@ export default function RentalListButton() {
             const start = new Date(startDate);
             const end = new Date(endDate);
 
-            // Check overlaps for each item in cart
             for (const item of cartItems) {
                 const response = await apiClient.post('/rentals/check-overlap', {
                     equipmentId: item.equipmentId,
@@ -98,10 +101,10 @@ export default function RentalListButton() {
                 if (response.data.hasOverlap) {
                     setOverlapWarning(response.data.overlappingRentals);
                     setShowOverlapModal(true);
-                    return true; // Has overlap
+                    return true;
                 }
             }
-            return false; // No overlap
+            return false;
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to check availability');
             return false;
@@ -113,7 +116,6 @@ export default function RentalListButton() {
     const handleConfirmClick = async () => {
         if (cartItems.length === 0) return;
 
-        // Validate dates
         const start = new Date(startDate);
         const end = new Date(endDate);
         const now = new Date();
@@ -133,13 +135,10 @@ export default function RentalListButton() {
             return;
         }
 
-        // Check for overlaps first
         const hasOverlap = await checkForOverlaps();
         if (!hasOverlap) {
-            // No overlap, proceed directly
             await submitRentals(false);
         }
-        // If has overlap, the modal will be shown
     };
 
     const submitRentals = async (allowOverlap: boolean = false) => {
@@ -150,7 +149,6 @@ export default function RentalListButton() {
             const start = new Date(startDate);
             const end = new Date(endDate);
 
-            // Create rental for each item
             for (const item of cartItems) {
                 await apiClient.post('/rentals', {
                     equipmentId: item.equipmentId,
@@ -177,13 +175,31 @@ export default function RentalListButton() {
 
     const handleProceedAnyway = async () => {
         setShowOverlapModal(false);
-        await submitRentals(true); // Allow overlap when user explicitly proceeds
+        await submitRentals(true);
     };
 
     const handleChangeDates = () => {
         setShowOverlapModal(false);
         setOverlapWarning(null);
-        // User can now change dates in the main panel
+    };
+
+    // Confirmation handlers
+    const showConfirmation = (type: string, itemId?: string) => {
+        setConfirmAction({ type, itemId });
+        setShowConfirmModal(true);
+    };
+
+    const handleConfirmedAction = () => {
+        if (!confirmAction) return;
+
+        if (confirmAction.type === 'removeItem' && confirmAction.itemId) {
+            removeFromCart(confirmAction.itemId);
+        } else if (confirmAction.type === 'clearAll') {
+            clearCart();
+        }
+
+        setShowConfirmModal(false);
+        setConfirmAction(null);
     };
 
     const isConfirmDisabled = submitting || !startDate || !endDate || !rentalReason.trim() || checkingOverlap;
@@ -193,11 +209,11 @@ export default function RentalListButton() {
             {/* Floating Rental List Button */}
             <button
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 bg-gradient-to-r from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900 text-white p-4 rounded-full shadow-2xl z-40 transition-all duration-300 transform hover:scale-110"
+                className="fixed bottom-6 right-6 backdrop-blur-2xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white p-4 rounded-2xl shadow-2xl z-40 transition-all duration-300 transform hover:scale-110 border border-white/20 group"
             >
-                <ClipboardList className="h-6 w-6" />
+                <ShoppingBag className="h-6 w-6 group-hover:rotate-12 transition-transform duration-300" />
                 {cartItems.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg animate-bounce">
                         {cartItems.length}
                     </span>
                 )}
@@ -208,157 +224,178 @@ export default function RentalListButton() {
                 <div className="fixed inset-0 z-50">
                     {/* Backdrop */}
                     <div
-                        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+                        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300 animate-fade-in"
                         onClick={() => setIsOpen(false)}
                     />
 
                     {/* Drawer */}
-                    <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl transform transition-transform duration-300 ease-out animate-slide-in-right">
+                    <div className="absolute right-0 top-0 h-full w-full max-w-lg backdrop-blur-2xl bg-gradient-to-b from-slate-900/90 to-slate-800/90 shadow-2xl transform transition-all duration-500 ease-out animate-slide-in-right border-l border-white/10">
                         <div className="flex flex-col h-full">
                             {/* Header */}
-                            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-gray-100 to-gray-50">
-                                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                    <ClipboardList className="h-5 w-5" />
-                                    Rental List ({cartItems.length})
-                                </h2>
+                            <div className="flex items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-blue-600/20 to-purple-600/20">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                                        <div className="p-2 bg-white/10 rounded-xl">
+                                            <ShoppingBag className="h-6 w-6" />
+                                        </div>
+                                        Rental List
+                                    </h2>
+                                    <p className="text-white/60 text-sm mt-1">
+                                        {cartItems.length} item{cartItems.length !== 1 ? 's' : ''} in cart
+                                    </p>
+                                </div>
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                                    className="p-3 hover:bg-white/10 rounded-xl transition-all duration-200 hover:rotate-90"
                                 >
-                                    <X className="h-5 w-5 text-gray-600" />
+                                    <X className="h-6 w-6 text-white/70" />
                                 </button>
                             </div>
 
-                            {/* Confirm Button at Top - More Visible */}
-                            {cartItems.length > 0 && (
-                                <div className="p-4 bg-green-50 border-b border-green-200">
-                                    <button
-                                        onClick={handleConfirmClick}
-                                        disabled={isConfirmDisabled}
-                                        className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
-                                    >
-                                        {checkingOverlap ? 'Checking availability...' : submitting ? 'Processing...' : '✓ Confirm Your Rental'}
-                                    </button>
-                                    {!rentalReason.trim() && (
-                                        <p className="text-xs text-amber-600 mt-2 text-center">
-                                            ⚠️ Please provide a reason for your rental below
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-
                             {/* Content */}
-                            <div className="flex-1 overflow-y-auto p-6">
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6">
                                 {cartItems.length === 0 ? (
-                                    <div className="text-center text-gray-500 py-12">
-                                        <ClipboardList className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                                        <p>Your rental list is empty</p>
-                                        <p className="text-sm mt-2">Add equipment items to get started</p>
+                                    <div className="text-center py-16">
+                                        <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
+                                            <ShoppingBag className="h-12 w-12 text-white/30" />
+                                        </div>
+                                        <h3 className="text-xl font-semibold text-white mb-2">Cart is Empty</h3>
+                                        <p className="text-white/50">Select equipment from the list to start renting</p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-4">
-                                        {/* Rental Period Selection */}
-                                        <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                                            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                                <Calendar className="h-5 w-5 text-blue-600" />
+                                    <>
+                                        {/* Selected Items */}
+                                        <div className="space-y-3">
+                                            <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider flex items-center gap-2">
+                                                <ClipboardList className="w-4 h-4" />
+                                                Selected Equipment
+                                            </h3>
+                                            {cartItems.map((item, index) => (
+                                                <div
+                                                    key={item.itemId}
+                                                    className="group backdrop-blur-xl bg-white/5 rounded-2xl p-4 border border-white/10 hover:border-white/20 transition-all duration-300 animate-fade-in-up"
+                                                    style={{ animationDelay: `${index * 100}ms` }}
+                                                >
+                                                    <div className="flex gap-4 items-center">
+                                                        <div className="w-16 h-16 rounded-xl bg-white overflow-hidden flex-shrink-0 shadow-lg">
+                                                            {item.equipmentImage ? (
+                                                                <img
+                                                                    src={item.equipmentImage}
+                                                                    alt={item.equipmentName}
+                                                                    className="w-full h-full object-contain p-1"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                                    <ShoppingBag className="w-6 h-6" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <h4 className="font-semibold text-white truncate">{item.equipmentName}</h4>
+                                                            <p className="text-sm text-white/50">ID: {item.itemCode}</p>
+                                                            <div className="flex items-center gap-2 mt-2">
+                                                                <Clock className="h-3 w-3 text-amber-400" />
+                                                                <span className="text-xs font-mono text-amber-400">
+                                                                    {formatTimeRemaining(item.expiresAt)}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => showConfirmation('removeItem', item.itemId)}
+                                                            className="p-3 text-red-400 hover:bg-red-500/20 rounded-xl transition-all duration-200 opacity-0 group-hover:opacity-100"
+                                                            title="Remove"
+                                                        >
+                                                            <Trash2 className="h-5 w-5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Rental Period */}
+                                        <div className="backdrop-blur-xl bg-blue-500/10 rounded-2xl p-5 border border-blue-500/20 space-y-4">
+                                            <h3 className="font-semibold text-white flex items-center gap-2">
+                                                <Calendar className="h-5 w-5 text-blue-400" />
                                                 Rental Period
                                             </h3>
-                                            <div className="space-y-3">
+                                            <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="block text-sm text-gray-700 mb-1 font-medium">Start Date & Time</label>
+                                                    <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">Start</label>
                                                     <input
                                                         type="datetime-local"
                                                         value={startDate}
                                                         onChange={(e) => setStartDate(e.target.value)}
-                                                        className="w-full bg-white border border-gray-300 rounded-lg p-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                        className="w-full bg-white/10 border border-white/20 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                                        style={{ colorScheme: 'dark' }}
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm text-gray-700 mb-1 font-medium">End Date & Time</label>
+                                                    <label className="block text-xs text-white/50 mb-2 uppercase tracking-wider">End</label>
                                                     <input
                                                         type="datetime-local"
                                                         value={endDate}
                                                         onChange={(e) => setEndDate(e.target.value)}
-                                                        className="w-full bg-white border border-gray-300 rounded-lg p-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                        className="w-full bg-white/10 border border-white/20 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                                        style={{ colorScheme: 'dark' }}
                                                     />
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* Reason for Rental (Mandatory) */}
-                                        <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
-                                            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                                <FileText className="h-5 w-5 text-amber-600" />
-                                                Reason for Rental <span className="text-red-500">*</span>
+                                        {/* Reason for Rental */}
+                                        <div className="backdrop-blur-xl bg-amber-500/10 rounded-2xl p-5 border border-amber-500/20 space-y-3">
+                                            <h3 className="font-semibold text-white flex items-center gap-2">
+                                                <FileText className="h-5 w-5 text-amber-400" />
+                                                Reason for Rental <span className="text-red-400">*</span>
                                             </h3>
                                             <textarea
                                                 value={rentalReason}
                                                 onChange={(e) => setRentalReason(e.target.value)}
-                                                placeholder="กรุณาระบุเหตุผลในการยืมอุปกรณ์ เช่น ใช้สำหรับงานอีเวนต์, โปรเจ็กต์จบ, กิจกรรมชมรม ฯลฯ"
+                                                placeholder="e.g., Event recording, Final project, Club activity..."
                                                 rows={3}
-                                                className="w-full bg-white border border-gray-300 rounded-lg p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                                                className="w-full bg-white/10 border border-white/20 rounded-xl p-4 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all duration-200 resize-none"
                                             />
-                                            <p className="text-xs text-gray-500 mt-2">
-                                                เหตุผลนี้จะถูกส่งให้ Admin พิจารณาประกอบการอนุมัติ
+                                            <p className="text-xs text-white/40">
+                                                Admin will consider this reason for approval
                                             </p>
                                         </div>
 
-                                        {/* Items List */}
-                                        <h3 className="font-bold text-gray-900">Selected Items</h3>
-                                        {cartItems.map((item) => (
-                                            <div
-                                                key={item.itemId}
-                                                className="bg-gray-50 rounded-xl p-4 border border-gray-200 animate-fade-in"
-                                            >
-                                                <div className="flex gap-4">
-                                                    {item.equipmentImage ? (
-                                                        <img
-                                                            src={item.equipmentImage}
-                                                            alt={item.equipmentName}
-                                                            className="w-16 h-16 object-contain rounded-lg bg-white border border-gray-200"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs">
-                                                            No Image
-                                                        </div>
-                                                    )}
-                                                    <div className="flex-1 min-w-0">
-                                                        <h3 className="font-semibold text-gray-900 truncate">{item.equipmentName}</h3>
-                                                        <p className="text-sm text-gray-600">Item ID: {item.itemCode}</p>
-                                                        <div className="flex items-center gap-1 mt-2 text-amber-600">
-                                                            <Clock className="h-4 w-4" />
-                                                            <span className="text-sm font-medium">
-                                                                Reserved for {formatTimeRemaining(item.expiresAt)}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => removeFromCart(item.itemId)}
-                                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors self-start"
-                                                        title="Remove from list"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </div>
+                                        {error && (
+                                            <div className="backdrop-blur-xl bg-red-500/20 text-red-300 rounded-xl p-4 text-sm border border-red-500/30 animate-shake">
+                                                ⚠️ {error}
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {error && (
-                                    <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">
-                                        {error}
-                                    </div>
+                                        )}
+                                    </>
                                 )}
                             </div>
 
                             {/* Footer */}
                             {cartItems.length > 0 && (
-                                <div className="p-4 border-t border-gray-200">
+                                <div className="p-6 border-t border-white/10 bg-gradient-to-t from-slate-900/50 to-transparent space-y-3">
                                     <button
-                                        onClick={clearCart}
+                                        onClick={handleConfirmClick}
+                                        disabled={isConfirmDisabled}
+                                        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white py-4 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-3"
+                                    >
+                                        {checkingOverlap || submitting ? (
+                                            <>
+                                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                </svg>
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CheckCircle className="h-5 w-5" />
+                                                Confirm Rental
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => showConfirmation('clearAll')}
                                         disabled={submitting}
-                                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-medium transition-colors"
+                                        className="w-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white py-3 rounded-xl font-medium transition-all duration-200 border border-white/10"
                                     >
                                         Clear All Items
                                     </button>
@@ -372,62 +409,84 @@ export default function RentalListButton() {
             {/* Overlap Warning Modal */}
             {showOverlapModal && overlapWarning && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center">
-                    <div
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                        onClick={() => setShowOverlapModal(false)}
-                    />
-                    <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 animate-fade-in">
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fade-in" onClick={() => setShowOverlapModal(false)} />
+                    <div className="relative backdrop-blur-2xl bg-gradient-to-b from-slate-800/95 to-slate-900/95 rounded-3xl shadow-2xl max-w-md w-full mx-4 p-6 animate-scale-in border border-white/20">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-3 bg-amber-100 rounded-full">
-                                <AlertTriangle className="h-6 w-6 text-amber-600" />
+                            <div className="p-3 bg-amber-500/20 rounded-2xl">
+                                <AlertTriangle className="h-7 w-7 text-amber-400" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-900">
-                                มีคำขอยืมที่ซ้อนทับกัน
-                            </h3>
+                            <div>
+                                <h3 className="text-xl font-bold text-white">Overlap Detected</h3>
+                                <p className="text-sm text-white/60">Someone else has requested this time slot</p>
+                            </div>
                         </div>
 
-                        <p className="text-gray-600 mb-4">
-                            พบคำขอยืมอุปกรณ์นี้จากผู้ใช้อื่นในช่วงเวลาที่ทับซ้อนกับคุณ:
-                        </p>
-
-                        <div className="bg-gray-50 rounded-xl p-4 mb-4 max-h-40 overflow-y-auto">
+                        <div className="bg-white/5 rounded-2xl p-4 mb-6 max-h-48 overflow-y-auto border border-white/10">
                             {overlapWarning.map((rental, idx) => (
-                                <div key={rental.id} className={`${idx > 0 ? 'border-t border-gray-200 pt-3 mt-3' : ''}`}>
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <p className="font-medium text-gray-900">{rental.userName}</p>
-                                            <p className="text-sm text-gray-500">
-                                                {formatDisplayDate(rental.startDate)} - {formatDisplayDate(rental.endDate)}
-                                            </p>
-                                        </div>
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${rental.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                                            rental.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' :
-                                                'bg-green-100 text-green-800'
+                                <div key={rental.id} className={`${idx > 0 ? 'border-t border-white/10 pt-3 mt-3' : ''}`}>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-medium text-white">{rental.userName}</span>
+                                        <span className={`px-2 py-1 rounded-lg text-xs font-bold ${rental.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                rental.status === 'APPROVED' ? 'bg-blue-500/20 text-blue-400' :
+                                                    'bg-green-500/20 text-green-400'
                                             }`}>
                                             {rental.status}
                                         </span>
                                     </div>
+                                    <p className="text-xs text-white/50 mt-1">
+                                        {formatDisplayDate(rental.startDate)} - {formatDisplayDate(rental.endDate)}
+                                    </p>
                                 </div>
                             ))}
                         </div>
 
-                        <p className="text-sm text-gray-500 mb-6">
-                            คุณสามารถเปลี่ยนวันที่ยืม หรือส่งคำขอต่อไปได้ (Admin จะพิจารณาตามความเหมาะสม)
-                        </p>
-
                         <div className="flex gap-3">
                             <button
                                 onClick={handleChangeDates}
-                                className="flex-1 px-4 py-3 rounded-xl font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                                className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/20"
                             >
-                                เปลี่ยนวันที่
+                                Change Dates
                             </button>
                             <button
                                 onClick={handleProceedAnyway}
                                 disabled={submitting}
-                                className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg disabled:opacity-50"
+                                className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 transition-all duration-200 shadow-lg disabled:opacity-50"
                             >
-                                {submitting ? 'กำลังส่ง...' : 'ส่งคำขอต่อไป'}
+                                {submitting ? 'Submitting...' : 'Proceed Anyway'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Confirmation Modal */}
+            {showConfirmModal && confirmAction && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fade-in" onClick={() => setShowConfirmModal(false)} />
+                    <div className="relative backdrop-blur-2xl bg-gradient-to-b from-slate-800/95 to-slate-900/95 rounded-3xl shadow-2xl max-w-sm w-full mx-4 p-6 animate-scale-in border border-white/20">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 flex items-center justify-center">
+                                <AlertTriangle className="h-8 w-8 text-amber-400" />
+                            </div>
+                            <h3 className="text-xl font-bold text-white mb-2">Confirm Action</h3>
+                            <p className="text-white/60">
+                                {confirmAction.type === 'removeItem'
+                                    ? 'Are you sure you want to remove this item from the cart?'
+                                    : 'Are you sure you want to clear all items?'}
+                            </p>
+                        </div>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowConfirmModal(false)}
+                                className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/20"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmedAction}
+                                className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg"
+                            >
+                                Confirm
                             </button>
                         </div>
                     </div>
@@ -435,31 +494,44 @@ export default function RentalListButton() {
             )}
 
             <style>{`
-        @keyframes slide-in-right {
-          from {
-            transform: translateX(100%);
-          }
-          to {
-            transform: translateX(0);
-          }
-        }
-        .animate-slide-in-right {
-          animation: slide-in-right 0.3s ease-out forwards;
-        }
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out forwards;
-        }
-      `}</style>
+                @keyframes slide-in-right {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                .animate-slide-in-right {
+                    animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                @keyframes fade-in {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                .animate-fade-in {
+                    animation: fade-in 0.3s ease-out forwards;
+                }
+                @keyframes fade-in-up {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .animate-fade-in-up {
+                    opacity: 0;
+                    animation: fade-in-up 0.4s ease-out forwards;
+                }
+                @keyframes scale-in {
+                    from { opacity: 0; transform: scale(0.9); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                .animate-scale-in {
+                    animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+                .animate-shake {
+                    animation: shake 0.3s ease-in-out;
+                }
+            `}</style>
         </>
     );
 }

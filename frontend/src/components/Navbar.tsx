@@ -1,25 +1,28 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { UserRole } from '../types';
-import { LogOut } from 'lucide-react';
+import { LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
     const location = useLocation();
     const navigate = useNavigate();
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
     const isAdmin = user?.role === UserRole.ADMIN;
 
     const isActive = (path: string) => {
-        return location.pathname.startsWith(path) ? 'text-gray-900 font-bold' : 'text-gray-700 hover:text-gray-900';
+        return location.pathname.startsWith(path)
+            ? 'text-white font-bold bg-white/20'
+            : 'text-white/80 hover:text-white hover:bg-white/10';
     };
 
     const handleLogoutConfirm = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('rememberMe');
-        localStorage.removeItem('rentalCart'); // Clear cart on logout to prevent data leak between users
+        localStorage.removeItem('rentalCart');
         setShowLogoutModal(false);
         navigate('/login');
     };
@@ -30,26 +33,28 @@ export default function Navbar() {
 
     return (
         <>
-            <nav className="bg-gradient-to-r from-blue-50 via-slate-50 to-teal-50 border-b border-slate-200 sticky top-0 z-50 backdrop-blur-md shadow-sm">
+            {/* Navbar - Blur effect */}
+            <nav className="backdrop-blur-2xl bg-slate-900/60 border-b border-white/10 sticky top-0 z-50 shadow-xl">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         <div className="flex items-center gap-8">
                             <Link to={isAdmin ? "/admin/rentals" : "/equipments"} className="flex flex-col font-bold leading-tight hover:opacity-80 transition-opacity">
-                                <span className="text-lg bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">🎓 University Club Gear</span>
+                                <span className="text-lg text-white">🎓 University Club Gear</span>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-700">{isAdmin ? "Admin Panel" : "Rental System"}</span>
-                                    <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] rounded-full font-bold">V.1.0</span>
+                                    <span className="text-xs text-white/70">{isAdmin ? "Admin Panel" : "Rental System"}</span>
+                                    <span className="px-1.5 py-0.5 bg-white/20 text-white text-[10px] rounded-full font-bold border border-white/30">V.1.0</span>
                                 </div>
                             </Link>
 
+                            {/* Desktop Menu */}
                             <div className="hidden md:block">
-                                <div className="flex items-baseline space-x-4">
+                                <div className="flex items-baseline space-x-2">
                                     {!isAdmin && (
                                         <>
-                                            <Link to="/equipments" className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActive('/equipments')} hover:bg-white/10`}>
+                                            <Link to="/equipments" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/equipments')}`}>
                                                 📦 All Equipment
                                             </Link>
-                                            <Link to="/my-rentals" className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActive('/my-rentals')} hover:bg-white/10`}>
+                                            <Link to="/my-rentals" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/my-rentals')}`}>
                                                 📋 My Rentals
                                             </Link>
                                         </>
@@ -57,17 +62,17 @@ export default function Navbar() {
 
                                     {isAdmin && (
                                         <>
-                                            <span className="text-gray-800 text-xs font-bold uppercase tracking-widest">⚙️ Admin:</span>
-                                            <Link to="/equipments" className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActive('/equipments')} hover:bg-white/10`}>
-                                                📦 View Equipment
+                                            <span className="text-white/60 text-xs font-bold uppercase tracking-widest">⚙️ Admin:</span>
+                                            <Link to="/equipments" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/equipments')}`}>
+                                                📦 View
                                             </Link>
-                                            <Link to="/admin/equipments" className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActive('/admin/equipments')} hover:bg-white/10`}>
+                                            <Link to="/admin/equipments" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/admin/equipments')}`}>
                                                 🔧 Manage
                                             </Link>
-                                            <Link to="/admin/rentals" className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActive('/admin/rentals')} hover:bg-white/10`}>
+                                            <Link to="/admin/rentals" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/admin/rentals')}`}>
                                                 📊 Rentals
                                             </Link>
-                                            <Link to="/admin/audit-logs" className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActive('/admin/audit-logs')} hover:bg-white/10`}>
+                                            <Link to="/admin/audit-logs" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/admin/audit-logs')}`}>
                                                 📝 Logs
                                             </Link>
                                         </>
@@ -77,46 +82,117 @@ export default function Navbar() {
                         </div>
 
                         <div className="flex items-center gap-4">
-                            <div className="text-gray-700 text-sm font-medium">
-                                👤 <span className="text-gray-900 font-bold">{user?.name || 'User'}</span>
+                            <div className="hidden md:block text-white/80 text-sm font-medium">
+                                👤 <span className="text-white font-bold">{user?.name || 'User'}</span>
                             </div>
                             <button
                                 onClick={handleLogoutClick}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/40 transition-all duration-200"
+                                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-all duration-200 shadow-lg"
                             >
                                 <LogOut className="h-4 w-4" />
+                                Logout
+                            </button>
+
+                            {/* Mobile menu button */}
+                            <button
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="md:hidden p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10 transition-all"
+                            >
+                                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Mobile Menu */}
+                    {mobileMenuOpen && (
+                        <div className="md:hidden py-4 border-t border-white/10 animate-slide-down">
+                            <div className="flex flex-col space-y-2">
+                                {!isAdmin && (
+                                    <>
+                                        <Link to="/equipments" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/equipments')}`}>
+                                            📦 All Equipment
+                                        </Link>
+                                        <Link to="/my-rentals" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/my-rentals')}`}>
+                                            📋 My Rentals
+                                        </Link>
+                                    </>
+                                )}
+
+                                {isAdmin && (
+                                    <>
+                                        <Link to="/equipments" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/equipments')}`}>
+                                            📦 View Equipment
+                                        </Link>
+                                        <Link to="/admin/equipments" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/admin/equipments')}`}>
+                                            🔧 Manage Equipment
+                                        </Link>
+                                        <Link to="/admin/rentals" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/admin/rentals')}`}>
+                                            📊 Rentals
+                                        </Link>
+                                        <Link to="/admin/audit-logs" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/admin/audit-logs')}`}>
+                                            📝 Logs
+                                        </Link>
+                                    </>
+                                )}
+
+                                <div className="border-t border-white/10 pt-4 mt-2">
+                                    <div className="px-4 text-white/80 text-sm mb-3">
+                                        👤 <span className="text-white font-bold">{user?.name || 'User'}</span>
+                                    </div>
+                                    <button
+                                        onClick={handleLogoutClick}
+                                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-all"
+                                    >
+                                        <LogOut className="h-4 w-4" />
+                                        Logout
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </nav>
+
+            {/* Logout Confirmation Modal - Blur effect */}
+            {showLogoutModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                    <div className="backdrop-blur-2xl bg-slate-900/70 rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-white/20 animate-scale-in">
+                        <h3 className="text-lg font-bold text-white mb-2">⚠️ Confirm Logout</h3>
+                        <p className="text-white/70 mb-6">Are you sure you want to logout?</p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setShowLogoutModal(false)}
+                                className="px-4 py-2 rounded-xl text-sm font-medium text-white bg-white/10 hover:bg-white/20 backdrop-blur-xl transition-all duration-200 border border-white/20"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleLogoutConfirm}
+                                className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 shadow-lg transition-all duration-200"
+                            >
                                 Logout
                             </button>
                         </div>
                     </div>
                 </div>
-            </nav>
+            )}
 
-            {/* Logout Confirmation Modal - Outside nav for proper centering */}
-            {
-                showLogoutModal && (
-                    <div className="fixed inset-0 bg-black/40 backdrop-blur flex items-center justify-center z-[100]">
-                        <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm mx-4 border border-gray-200">
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">⚠️ Confirm Logout</h3>
-                            <p className="text-gray-700 mb-6">Are you sure you want to logout?</p>
-                            <div className="flex gap-3 justify-end">
-                                <button
-                                    onClick={() => setShowLogoutModal(false)}
-                                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 border border-gray-300 transition-all duration-200"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleLogoutConfirm}
-                                    className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg shadow-red-500/30 transition-all duration-200"
-                                >
-                                    Logout
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
+            <style>{`
+                @keyframes slide-down {
+                    from { opacity: 0; max-height: 0; }
+                    to { opacity: 1; max-height: 500px; }
+                }
+                .animate-slide-down {
+                    animation: slide-down 0.3s ease-out forwards;
+                }
+                @keyframes scale-in {
+                    from { opacity: 0; transform: scale(0.95); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                .animate-scale-in {
+                    animation: scale-in 0.2s ease-out forwards;
+                }
+            `}</style>
         </>
     );
 }

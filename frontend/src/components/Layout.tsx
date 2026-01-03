@@ -12,9 +12,26 @@ export default function Layout() {
 
     return (
         <CartProvider>
-            <div className="min-h-screen bg-gray-900 text-white font-sans">
+            <div
+                className="min-h-screen text-white font-sans relative"
+                style={{
+                    backgroundImage: 'url(/main-bg.jpg)',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundAttachment: 'fixed',
+                }}
+            >
+                {/* Darker overlay for better text readability + brightness reduction */}
+                <div
+                    className="fixed inset-0 -z-10"
+                    style={{
+                        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                    }}
+                />
+
                 <Navbar />
-                <main>
+                <main className="relative z-10">
                     <Outlet />
                 </main>
                 {isUser && <RentalListButton />}
