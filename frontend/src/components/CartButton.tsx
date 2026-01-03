@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardList, X, Clock, Trash2, Calendar } from 'lucide-react';
+import { ClipboardList, X, Clock, Trash2, Calendar, AlertTriangle, FileText } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import apiClient from '../api/client';
+
+interface OverlapInfo {
+    id: string;
+    status: string;
+    startDate: string;
+    endDate: string;
+    userName: string;
+}
 
 export default function RentalListButton() {
     const { cartItems, removeFromCart, clearCart } = useCart();
@@ -14,6 +22,14 @@ export default function RentalListButton() {
     // Date state for rental period
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
+
+    // Reason for rental (mandatory)
+    const [rentalReason, setRentalReason] = useState('');
+
+    // Overlap warning state
+    const [overlapWarning, setOverlapWarning] = useState<OverlapInfo[] | null>(null);
+    const [showOverlapModal, setShowOverlapModal] = useState(false);
+    const [checkingOverlap, setCheckingOverlap] = useState(false);
 
     // State for countdown timers
     const [, setTick] = useState(0);
@@ -51,7 +67,50 @@ export default function RentalListButton() {
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
-    const handleConfirmRentals = async () => {
+    const formatDisplayDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('th-TH', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    const checkForOverlaps = async (): Promise<boolean> => {
+        setCheckingOverlap(true);
+        setError('');
+
+        try {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            // Check overlaps for each item in cart
+            for (const item of cartItems) {
+                const response = await apiClient.post('/rentals/check-overlap', {
+                    equipmentId: item.equipmentId,
+                    equipmentItemId: item.itemId,
+                    startDate: start.toISOString(),
+                    endDate: end.toISOString(),
+                });
+
+                if (response.data.hasOverlap) {
+                    setOverlapWarning(response.data.overlappingRentals);
+                    setShowOverlapModal(true);
+                    return true; // Has overlap
+                }
+            }
+            return false; // No overlap
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to check availability');
+            return false;
+        } finally {
+            setCheckingOverlap(false);
+        }
+    };
+
+    const handleConfirmClick = async () => {
         if (cartItems.length === 0) return;
 
         // Validate dates
@@ -69,10 +128,28 @@ export default function RentalListButton() {
             return;
         }
 
+        if (!rentalReason.trim()) {
+            setError('Please provide a reason for your rental request');
+            return;
+        }
+
+        // Check for overlaps first
+        const hasOverlap = await checkForOverlaps();
+        if (!hasOverlap) {
+            // No overlap, proceed directly
+            await submitRentals(false);
+        }
+        // If has overlap, the modal will be shown
+    };
+
+    const submitRentals = async (allowOverlap: boolean = false) => {
         setSubmitting(true);
         setError('');
 
         try {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
             // Create rental for each item
             for (const item of cartItems) {
                 await apiClient.post('/rentals', {
@@ -80,12 +157,16 @@ export default function RentalListButton() {
                     equipmentItemId: item.itemId,
                     startDate: start.toISOString(),
                     endDate: end.toISOString(),
-                    requestDetails: `Rental request for ${item.equipmentName} (Item: ${item.itemCode})`,
+                    requestDetails: rentalReason.trim(),
+                    allowOverlap: allowOverlap,
                 });
             }
 
             clearCart();
+            setRentalReason('');
             setIsOpen(false);
+            setShowOverlapModal(false);
+            setOverlapWarning(null);
             navigate('/my-rentals');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to submit rental requests');
@@ -93,6 +174,19 @@ export default function RentalListButton() {
             setSubmitting(false);
         }
     };
+
+    const handleProceedAnyway = async () => {
+        setShowOverlapModal(false);
+        await submitRentals(true); // Allow overlap when user explicitly proceeds
+    };
+
+    const handleChangeDates = () => {
+        setShowOverlapModal(false);
+        setOverlapWarning(null);
+        // User can now change dates in the main panel
+    };
+
+    const isConfirmDisabled = submitting || !startDate || !endDate || !rentalReason.trim() || checkingOverlap;
 
     return (
         <>
@@ -139,12 +233,17 @@ export default function RentalListButton() {
                             {cartItems.length > 0 && (
                                 <div className="p-4 bg-green-50 border-b border-green-200">
                                     <button
-                                        onClick={handleConfirmRentals}
-                                        disabled={submitting || !startDate || !endDate}
-                                        className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
+                                        onClick={handleConfirmClick}
+                                        disabled={isConfirmDisabled}
+                                        className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
                                     >
-                                        {submitting ? 'Processing...' : '✓ Confirm Your Rental'}
+                                        {checkingOverlap ? 'Checking availability...' : submitting ? 'Processing...' : '✓ Confirm Your Rental'}
                                     </button>
+                                    {!rentalReason.trim() && (
+                                        <p className="text-xs text-amber-600 mt-2 text-center">
+                                            ⚠️ Please provide a reason for your rental below
+                                        </p>
+                                    )}
                                 </div>
                             )}
 
@@ -184,6 +283,24 @@ export default function RentalListButton() {
                                                     />
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        {/* Reason for Rental (Mandatory) */}
+                                        <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                                            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                                <FileText className="h-5 w-5 text-amber-600" />
+                                                Reason for Rental <span className="text-red-500">*</span>
+                                            </h3>
+                                            <textarea
+                                                value={rentalReason}
+                                                onChange={(e) => setRentalReason(e.target.value)}
+                                                placeholder="กรุณาระบุเหตุผลในการยืมอุปกรณ์ เช่น ใช้สำหรับงานอีเวนต์, โปรเจ็กต์จบ, กิจกรรมชมรม ฯลฯ"
+                                                rows={3}
+                                                className="w-full bg-white border border-gray-300 rounded-lg p-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400 resize-none"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                เหตุผลนี้จะถูกส่งให้ Admin พิจารณาประกอบการอนุมัติ
+                                            </p>
                                         </div>
 
                                         {/* Items List */}
@@ -247,6 +364,71 @@ export default function RentalListButton() {
                                     </button>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Overlap Warning Modal */}
+            {showOverlapModal && overlapWarning && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center">
+                    <div
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setShowOverlapModal(false)}
+                    />
+                    <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 animate-fade-in">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-amber-100 rounded-full">
+                                <AlertTriangle className="h-6 w-6 text-amber-600" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900">
+                                มีคำขอยืมที่ซ้อนทับกัน
+                            </h3>
+                        </div>
+
+                        <p className="text-gray-600 mb-4">
+                            พบคำขอยืมอุปกรณ์นี้จากผู้ใช้อื่นในช่วงเวลาที่ทับซ้อนกับคุณ:
+                        </p>
+
+                        <div className="bg-gray-50 rounded-xl p-4 mb-4 max-h-40 overflow-y-auto">
+                            {overlapWarning.map((rental, idx) => (
+                                <div key={rental.id} className={`${idx > 0 ? 'border-t border-gray-200 pt-3 mt-3' : ''}`}>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="font-medium text-gray-900">{rental.userName}</p>
+                                            <p className="text-sm text-gray-500">
+                                                {formatDisplayDate(rental.startDate)} - {formatDisplayDate(rental.endDate)}
+                                            </p>
+                                        </div>
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${rental.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                                            rental.status === 'APPROVED' ? 'bg-blue-100 text-blue-800' :
+                                                'bg-green-100 text-green-800'
+                                            }`}>
+                                            {rental.status}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <p className="text-sm text-gray-500 mb-6">
+                            คุณสามารถเปลี่ยนวันที่ยืม หรือส่งคำขอต่อไปได้ (Admin จะพิจารณาตามความเหมาะสม)
+                        </p>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleChangeDates}
+                                className="flex-1 px-4 py-3 rounded-xl font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+                            >
+                                เปลี่ยนวันที่
+                            </button>
+                            <button
+                                onClick={handleProceedAnyway}
+                                disabled={submitting}
+                                className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg disabled:opacity-50"
+                            >
+                                {submitting ? 'กำลังส่ง...' : 'ส่งคำขอต่อไป'}
+                            </button>
                         </div>
                     </div>
                 </div>

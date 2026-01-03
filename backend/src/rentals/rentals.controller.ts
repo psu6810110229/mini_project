@@ -12,6 +12,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { RentalsService } from './rentals.service';
 import { CreateRentalDto } from './dto/create-rental.dto';
 import { UpdateRentalStatusDto } from './dto/update-rental-status.dto';
+import { CheckOverlapDto } from './dto/check-overlap.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
@@ -29,6 +30,31 @@ export class RentalsController {
     @ApiResponse({ status: 400, description: 'Overlap or invalid dates' })
     create(@CurrentUser() user: User, @Body() createRentalDto: CreateRentalDto) {
         return this.rentalsService.create(user.id, createRentalDto);
+    }
+
+    @Post('check-overlap')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Check for overlapping rental requests' })
+    @ApiResponse({ status: 200, description: 'Returns list of overlapping rentals' })
+    async checkOverlap(@Body() checkOverlapDto: CheckOverlapDto) {
+        const { equipmentId, equipmentItemId, startDate, endDate } = checkOverlapDto;
+        const overlappingRentals = await this.rentalsService.getOverlappingRentals(
+            equipmentId,
+            new Date(startDate),
+            new Date(endDate),
+            equipmentItemId,
+        );
+        return {
+            hasOverlap: overlappingRentals.length > 0,
+            overlappingRentals: overlappingRentals.map(r => ({
+                id: r.id,
+                status: r.status,
+                startDate: r.startDate,
+                endDate: r.endDate,
+                userName: r.user?.name || 'Unknown',
+            })),
+        };
     }
 
     @Get()

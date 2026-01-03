@@ -26,7 +26,7 @@ export class RentalsService {
     ) { }
 
     async create(userId: string, createRentalDto: CreateRentalDto): Promise<Rental> {
-        const { equipmentId, equipmentItemId, startDate, endDate, requestDetails, attachmentUrl } = createRentalDto;
+        const { equipmentId, equipmentItemId, startDate, endDate, requestDetails, attachmentUrl, allowOverlap } = createRentalDto;
 
         const start = new Date(startDate);
         const end = new Date(endDate);
@@ -51,10 +51,12 @@ export class RentalsService {
             }
         }
 
-        // Check for overlapping rentals
-        const hasOverlap = await this.checkOverlap(equipmentId, start, end, undefined, equipmentItemId);
-        if (hasOverlap) {
-            throw new BadRequestException('Equipment is already booked for this period');
+        // Check for overlapping rentals (skip if user explicitly allows overlap)
+        if (!allowOverlap) {
+            const hasOverlap = await this.checkOverlap(equipmentId, start, end, undefined, equipmentItemId);
+            if (hasOverlap) {
+                throw new BadRequestException('Equipment is already booked for this period');
+            }
         }
 
         const rental = this.rentalRepository.create({
@@ -103,6 +105,26 @@ export class RentalsService {
 
         const count = await queryBuilder.getCount();
         return count > 0;
+    }
+
+    async getOverlappingRentals(equipmentId: string, startDate: Date, endDate: Date, equipmentItemId?: string): Promise<Rental[]> {
+        const queryBuilder = this.rentalRepository
+            .createQueryBuilder('rental')
+            .leftJoinAndSelect('rental.user', 'user')
+            .leftJoinAndSelect('rental.equipment', 'equipment')
+            .where('rental.equipmentId = :equipmentId', { equipmentId })
+            .andWhere('rental.status IN (:...activeStatuses)', {
+                activeStatuses: [RentalStatus.PENDING, RentalStatus.APPROVED, RentalStatus.CHECKED_OUT],
+            })
+            .andWhere('rental.startDate < :endDate', { endDate })
+            .andWhere('rental.endDate > :startDate', { startDate });
+
+        // If checking a specific item, only check overlaps for that item
+        if (equipmentItemId) {
+            queryBuilder.andWhere('rental.equipmentItemId = :equipmentItemId', { equipmentItemId });
+        }
+
+        return queryBuilder.orderBy('rental.startDate', 'ASC').getMany();
     }
 
     async findAll(): Promise<Rental[]> {

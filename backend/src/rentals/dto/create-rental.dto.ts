@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsDateString, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateRentalDto {
@@ -28,5 +28,10 @@ export class CreateRentalDto {
     @IsOptional()
     @IsString()
     attachmentUrl?: string;
+
+    @ApiPropertyOptional({ example: false, description: 'Allow submission even if overlapping requests exist' })
+    @IsOptional()
+    @IsBoolean()
+    allowOverlap?: boolean;
 }
 

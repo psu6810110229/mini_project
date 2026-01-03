@@ -1,0 +1,21 @@
+import { IsString, IsOptional, IsUUID, IsDateString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+export class CheckOverlapDto {
+    @ApiProperty({ example: 'uuid-of-equipment' })
+    @IsUUID()
+    equipmentId: string;
+
+    @ApiPropertyOptional({ example: 'uuid-of-equipment-item' })
+    @IsOptional()
+    @IsUUID()
+    equipmentItemId?: string;
+
+    @ApiProperty({ example: '2025-12-30T09:00:00+07:00' })
+    @IsDateString()
+    startDate: string;
+
+    @ApiProperty({ example: '2026-01-02T18:00:00+07:00' })
+    @IsDateString()
+    endDate: string;
+}
