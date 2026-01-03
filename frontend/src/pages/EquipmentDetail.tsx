@@ -4,12 +4,12 @@ import apiClient from '../api/client';
 import type { Equipment, EquipmentItem } from '../types';
 import { UserRole, EquipmentItemStatus } from '../types';
 import { useCart } from '../context/CartContext';
-import { ClipboardList, Check, Plus } from 'lucide-react';
+import { ClipboardList, Check, Plus, X } from 'lucide-react';
 
 export default function EquipmentDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { addToCart, isInCart } = useCart();
+    const { addToCart, isInCart, removeFromCart } = useCart();
     const [equipment, setEquipment] = useState<Equipment | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -164,9 +164,13 @@ export default function EquipmentDetail() {
                                                             <span className="font-bold text-gray-900">ID: {item.itemCode}</span>
                                                             <span className="block text-xs text-green-600 font-medium">Reserved</span>
                                                         </div>
-                                                        <div className="bg-green-100 text-green-700 p-2 rounded-lg">
-                                                            <Check className="h-4 w-4" />
-                                                        </div>
+                                                        <button
+                                                            onClick={() => removeFromCart(item.id)}
+                                                            className="bg-red-100 hover:bg-red-200 text-red-600 p-2 rounded-lg transition-colors"
+                                                            title="Remove from list"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </button>
                                                     </div>
                                                 ))}
                                             </div>
