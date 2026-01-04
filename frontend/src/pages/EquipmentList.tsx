@@ -134,10 +134,10 @@ export default function EquipmentList() {
                                 <select
                                     value={filterStatus}
                                     onChange={(e) => setFilterStatus(e.target.value)}
-                                    className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 cursor-pointer appearance-none"
+                                    className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-2xl py-3 px-4 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 cursor-pointer appearance-none hover:border-white/30 hover:bg-slate-700/60"
                                     style={{ colorScheme: 'dark' }}
                                 >
-                                    <option value="" className="bg-slate-800">All Equipment</option>
+                                    <option value="" className="bg-slate-800 rounded-lg">All Equipment</option>
                                     {isAdmin ? (
                                         <>
                                             <option value="AVAILABLE" className="bg-slate-800">✓ AVAILABLE</option>

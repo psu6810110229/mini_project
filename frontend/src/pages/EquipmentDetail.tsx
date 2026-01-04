@@ -92,8 +92,14 @@ export default function EquipmentDetail() {
         }
     };
 
-    const availableItems = equipment?.items?.filter(
+    // Available items for adding to cart - exclude items already in cart for UI purposes
+    const availableItemsForCart = equipment?.items?.filter(
         item => item.status === EquipmentItemStatus.AVAILABLE && !isInCart(item.id)
+    ) || [];
+
+    // Actual available count for display - only based on item status, not cart
+    const actualAvailableItems = equipment?.items?.filter(
+        item => item.status === EquipmentItemStatus.AVAILABLE
     ) || [];
 
     const inCartItems = equipment?.items?.filter(item => isInCart(item.id)) || [];
@@ -170,11 +176,11 @@ export default function EquipmentDetail() {
                                     {equipment.category}
                                 </span>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-sm font-bold ${availableItems.length > 0
+                            <span className={`px-3 py-1 rounded-full text-sm font-bold ${actualAvailableItems.length > 0
                                 ? 'bg-green-600 text-white'
                                 : 'bg-red-600 text-white'
                                 }`}>
-                                {availableItems.length > 0 ? 'Available' : 'Unavailable'}
+                                {actualAvailableItems.length > 0 ? 'Available' : 'Unavailable'}
                             </span>
                         </div>
 
@@ -182,7 +188,7 @@ export default function EquipmentDetail() {
                             <div className="flex justify-between py-3 border-b border-white/20">
                                 <span className="text-white/70">Available</span>
                                 <span className="text-white font-semibold">
-                                    {availableItems.length}/{equipment.items?.length || equipment.stockQty}
+                                    {actualAvailableItems.length}/{equipment.items?.length || equipment.stockQty}
                                 </span>
                             </div>
                         </div>
@@ -190,11 +196,11 @@ export default function EquipmentDetail() {
                         {!isAdmin && (
                             <>
                                 {/* Available Items to Add */}
-                                {availableItems.length > 0 && (
+                                {availableItemsForCart.length > 0 && (
                                     <div className="mb-6">
                                         <h3 className="text-lg font-semibold text-white mb-3">Select items to rent</h3>
                                         <div className="grid grid-cols-2 gap-3">
-                                            {availableItems.map((item, index) => (
+                                            {availableItemsForCart.map((item, index) => (
                                                 <button
                                                     key={item.id}
                                                     onClick={() => handleAddToCart(item)}
@@ -245,7 +251,7 @@ export default function EquipmentDetail() {
                                 )}
 
                                 {/* No Items Available */}
-                                {availableItems.length === 0 && inCartItems.length === 0 && (
+                                {availableItemsForCart.length === 0 && inCartItems.length === 0 && (
                                     <div className="backdrop-blur-2xl bg-slate-800/50 p-6 rounded-xl border border-white/20 text-center">
                                         <Package className="w-12 h-12 mx-auto mb-3 text-white/40" />
                                         <p className="text-white/70 font-medium">

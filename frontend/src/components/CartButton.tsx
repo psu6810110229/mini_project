@@ -241,7 +241,7 @@ export default function RentalListButton() {
                                         Rental List
                                     </h2>
                                     <p className="text-white/60 text-sm mt-1">
-                                        {cartItems.length} item{cartItems.length !== 1 ? 's' : ''} in cart
+                                        {cartItems.length} item{cartItems.length !== 1 ? 's' : ''} selected
                                     </p>
                                 </div>
                                 <button
@@ -259,7 +259,7 @@ export default function RentalListButton() {
                                         <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
                                             <ShoppingBag className="h-12 w-12 text-white/30" />
                                         </div>
-                                        <h3 className="text-xl font-semibold text-white mb-2">Cart is Empty</h3>
+                                        <h3 className="text-xl font-semibold text-white mb-2">Rental List is Empty</h3>
                                         <p className="text-white/50">Select equipment from the list to start renting</p>
                                     </div>
                                 ) : (
@@ -427,8 +427,8 @@ export default function RentalListButton() {
                                     <div className="flex justify-between items-center">
                                         <span className="font-medium text-white">{rental.userName}</span>
                                         <span className={`px-2 py-1 rounded-lg text-xs font-bold ${rental.status === 'PENDING' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                rental.status === 'APPROVED' ? 'bg-blue-500/20 text-blue-400' :
-                                                    'bg-green-500/20 text-green-400'
+                                            rental.status === 'APPROVED' ? 'bg-blue-500/20 text-blue-400' :
+                                                'bg-green-500/20 text-green-400'
                                             }`}>
                                             {rental.status}
                                         </span>
@@ -471,8 +471,8 @@ export default function RentalListButton() {
                             <h3 className="text-xl font-bold text-white mb-2">Confirm Action</h3>
                             <p className="text-white/60">
                                 {confirmAction.type === 'removeItem'
-                                    ? 'Are you sure you want to remove this item from the cart?'
-                                    : 'Are you sure you want to clear all items?'}
+                                    ? 'Are you sure you want to remove this item from the rental list?'
+                                    : 'Are you sure you want to clear all items from the rental list?'}
                             </p>
                         </div>
                         <div className="flex gap-3">
