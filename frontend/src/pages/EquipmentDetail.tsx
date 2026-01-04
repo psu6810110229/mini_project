@@ -51,7 +51,7 @@ export default function EquipmentDetail() {
         });
 
         if (success) {
-            setAddedMessage(`เพิ่ม ${item.itemCode} ลงในรายการยืมแล้ว!`);
+            setAddedMessage(`Add ${item.itemCode} to the list!`);
             setTimeout(() => setAddedMessage(''), 2000);
         }
     };
@@ -84,7 +84,7 @@ export default function EquipmentDetail() {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
-                        <span className="text-white font-medium">กำลังโหลด...</span>
+                        <span className="text-white font-medium">Loading...</span>
                     </div>
                 </div>
             </div>
@@ -109,7 +109,7 @@ export default function EquipmentDetail() {
                 style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}
             >
                 <ArrowLeft className="w-4 h-4 group-hover:-translate-x-2 transition-transform duration-200" />
-                กลับไปหน้ารายการ
+                Back to list
             </button>
 
             {/* Success Message */}
@@ -134,7 +134,7 @@ export default function EquipmentDetail() {
                         ) : (
                             <div className="flex flex-col items-center gap-2 text-gray-400">
                                 <Package className="w-16 h-16" />
-                                <span className="text-sm">ไม่มีรูปภาพ</span>
+                                <span className="text-sm">No Image</span>
                             </div>
                         )}
                     </div>
@@ -149,18 +149,18 @@ export default function EquipmentDetail() {
                                 </span>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-sm font-bold ${equipment.status === 'AVAILABLE'
-                                    ? 'bg-green-600 text-white'
-                                    : 'bg-red-600 text-white'
+                                ? 'bg-green-600 text-white'
+                                : 'bg-red-600 text-white'
                                 }`}>
-                                {equipment.status === 'AVAILABLE' ? 'พร้อมใช้งาน' : equipment.status}
+                                {equipment.status === 'AVAILABLE' ? 'Available' : equipment.status}
                             </span>
                         </div>
 
                         <div className="space-y-4 mb-8">
                             <div className="flex justify-between py-3 border-b border-white/20">
-                                <span className="text-white/70">รายการที่ว่าง</span>
+                                <span className="text-white/70">Available</span>
                                 <span className="text-white font-semibold">
-                                    {availableItems.length}/{equipment.items?.length || equipment.stockQty} ชิ้น
+                                    {availableItems.length}/{equipment.items?.length || equipment.stockQty}
                                 </span>
                             </div>
                         </div>
@@ -170,7 +170,7 @@ export default function EquipmentDetail() {
                                 {/* Available Items to Add */}
                                 {availableItems.length > 0 && (
                                     <div className="mb-6">
-                                        <h3 className="text-lg font-semibold text-white mb-3">เลือกรายการที่ต้องการยืม</h3>
+                                        <h3 className="text-lg font-semibold text-white mb-3">Select items to rent</h3>
                                         <div className="grid grid-cols-2 gap-3">
                                             {availableItems.map((item, index) => (
                                                 <button
@@ -180,8 +180,8 @@ export default function EquipmentDetail() {
                                                     style={{ animationDelay: `${index * 50}ms` }}
                                                 >
                                                     <div className="text-left">
-                                                        <span className="font-bold text-white">รหัส: {item.itemCode}</span>
-                                                        <span className="block text-xs text-green-400 font-medium">ว่าง</span>
+                                                        <span className="font-bold text-white">Item Code: {item.itemCode}</span>
+                                                        <span className="block text-xs text-green-400 font-medium">Available</span>
                                                     </div>
                                                     <div className="backdrop-blur-xl bg-white/10 group-hover:bg-blue-600 p-2 rounded-lg transition-all duration-300 group-hover:scale-110">
                                                         <Plus className="h-4 w-4 text-white" />
@@ -197,7 +197,7 @@ export default function EquipmentDetail() {
                                     <div className="mb-6">
                                         <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                                             <ShoppingBag className="h-5 w-5" />
-                                            ในรายการยืมของคุณ
+                                            Items in your rental list
                                         </h3>
                                         <div className="grid grid-cols-2 gap-3">
                                             {inCartItems.map((item) => (
@@ -206,13 +206,13 @@ export default function EquipmentDetail() {
                                                     className="flex items-center justify-between backdrop-blur-2xl bg-green-900/30 border border-green-500/30 rounded-xl p-3 animate-fade-in"
                                                 >
                                                     <div className="text-left">
-                                                        <span className="font-bold text-white">รหัส: {item.itemCode}</span>
-                                                        <span className="block text-xs text-green-300 font-medium">จองแล้ว</span>
+                                                        <span className="font-bold text-white">item code: {item.itemCode}</span>
+                                                        <span className="block text-xs text-green-300 font-medium">Reserved</span>
                                                     </div>
                                                     <button
                                                         onClick={() => showRemoveConfirmation(item.id, item.itemCode)}
                                                         className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-all duration-200 hover:scale-110"
-                                                        title="ลบออกจากรายการ"
+                                                        title="Remove from list"
                                                     >
                                                         <X className="h-4 w-4" />
                                                     </button>
@@ -227,7 +227,7 @@ export default function EquipmentDetail() {
                                     <div className="backdrop-blur-2xl bg-slate-800/50 p-6 rounded-xl border border-white/20 text-center">
                                         <Package className="w-12 h-12 mx-auto mb-3 text-white/40" />
                                         <p className="text-white/70 font-medium">
-                                            ไม่มีรายการว่างให้ยืมในขณะนี้
+                                            No available items to rent at the moment
                                         </p>
                                     </div>
                                 )}
@@ -236,7 +236,7 @@ export default function EquipmentDetail() {
                                 {inCartItems.length > 0 && (
                                     <p className="text-sm text-white/60 text-center flex items-center justify-center gap-2">
                                         <ShoppingBag className="w-4 h-4" />
-                                        คลิกปุ่มรายการยืมที่มุมขวาล่างเพื่อยืนยัน
+                                        Click the rental list button in the bottom right to confirm
                                     </p>
                                 )}
                             </>
@@ -245,7 +245,7 @@ export default function EquipmentDetail() {
                         {isAdmin && (
                             <div className="backdrop-blur-2xl bg-slate-800/50 p-6 rounded-xl border border-white/20">
                                 <p className="text-center text-white/70 font-medium">
-                                    👨‍💼 โหมดแอดมิน - ไม่สามารถยืมอุปกรณ์ได้
+                                    👨‍💼 Admin mode - Cannot rent equipment
                                 </p>
                             </div>
                         )}
@@ -262,9 +262,9 @@ export default function EquipmentDetail() {
                             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 flex items-center justify-center">
                                 <AlertTriangle className="h-8 w-8 text-amber-400" />
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">ยืนยันการลบ</h3>
+                            <h3 className="text-xl font-bold text-white mb-2">Confirm removal</h3>
                             <p className="text-white/60">
-                                คุณต้องการลบ <span className="text-white font-semibold">{confirmAction.itemCode}</span> ออกจากรายการยืมใช่ไหม?
+                                Are you sure you want to remove <span className="text-white font-semibold">{confirmAction.itemCode}</span> from your rental list?
                             </p>
                         </div>
                         <div className="flex gap-3">
@@ -272,13 +272,13 @@ export default function EquipmentDetail() {
                                 onClick={() => setShowConfirmModal(false)}
                                 className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/20"
                             >
-                                ยกเลิก
+                                Cancel
                             </button>
                             <button
                                 onClick={handleConfirmedRemove}
                                 className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg"
                             >
-                                ยืนยัน
+                                Confirm
                             </button>
                         </div>
                     </div>
