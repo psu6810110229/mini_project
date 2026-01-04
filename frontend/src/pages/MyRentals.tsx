@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
 import type { Rental } from '../types';
-import { History, Package, Calendar, FileText, Clock } from 'lucide-react';
+import { History, Package, Calendar, FileText, Clock, Loader, CheckCircle, ArrowUpRight, RotateCcw, XCircle, Ban } from 'lucide-react';
 
 export default function MyRentals() {
     const [rentals, setRentals] = useState<Rental[]>([]);
@@ -21,15 +21,15 @@ export default function MyRentals() {
     };
 
     const getStatusInfo = (status: string) => {
-        const map: Record<string, { label: string; color: string; icon: string }> = {
-            'PENDING': { label: 'Pending', color: 'bg-yellow-600', icon: '⏳' },
-            'APPROVED': { label: 'Approved', color: 'bg-green-600', icon: '✓' },
-            'CHECKED_OUT': { label: 'Checked Out', color: 'bg-blue-600', icon: '📤' },
-            'RETURNED': { label: 'Returned', color: 'bg-gray-600', icon: '📥' },
-            'REJECTED': { label: 'Rejected', color: 'bg-red-600', icon: '✗' },
-            'CANCELLED': { label: 'Cancelled', color: 'bg-red-600', icon: '🚫' },
+        const map: Record<string, { label: string; color: string; Icon: React.ComponentType<any> }> = {
+            'PENDING': { label: 'Pending', color: 'bg-amber-500/80', Icon: Loader },
+            'APPROVED': { label: 'Approved', color: 'bg-emerald-500/80', Icon: CheckCircle },
+            'CHECKED_OUT': { label: 'Checked Out', color: 'bg-sky-500/80', Icon: ArrowUpRight },
+            'RETURNED': { label: 'Returned', color: 'bg-slate-500/80', Icon: RotateCcw },
+            'REJECTED': { label: 'Rejected', color: 'bg-rose-500/80', Icon: XCircle },
+            'CANCELLED': { label: 'Cancelled', color: 'bg-rose-500/80', Icon: Ban },
         };
-        return map[status] || { label: status, color: 'bg-gray-600', icon: '?' };
+        return map[status] || { label: status, color: 'bg-slate-500/80', Icon: Package };
     };
 
     const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -66,13 +66,13 @@ export default function MyRentals() {
                         return (
                             <div key={rental.id} className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl border border-white/20 overflow-hidden shadow-xl transition-all duration-300 hover:bg-slate-800/60" style={{ animationDelay: `${idx * 50}ms` }}>
                                 <div className="flex flex-col md:flex-row">
-                                    <div className="md:w-32 h-32 flex-shrink-0 bg-white flex items-center justify-center overflow-hidden border-b md:border-b-0 md:border-r border-white/10">
+                                    <div className="md:w-32 h-32 flex-shrink-0 bg-white flex items-center justify-center overflow-hidden border-b md:border-b-0 md:border-r border-white/10 rounded-br-xl">
                                         {rental.equipment?.imageUrl ? <img src={rental.equipment.imageUrl} alt="" className="w-full h-full object-contain p-2" /> : <Package className="w-10 h-10 text-gray-400" />}
                                     </div>
                                     <div className="flex-1 p-5">
                                         <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                                             <div><h3 className="font-bold text-white text-lg">{rental.equipment?.name || 'Unknown'}</h3>{rental.equipmentItem?.itemCode && <p className="text-white/50 text-sm">ID: {rental.equipmentItem.itemCode}</p>}</div>
-                                            <span className={`px-3 py-1.5 rounded-full text-sm font-bold text-white ${st.color}`}>{st.icon} {st.label}</span>
+                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-white ${st.color}`}><st.Icon className="w-3.5 h-3.5" />{st.label}</span>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                                             <div className="flex items-center gap-2 text-sm"><Calendar className="w-4 h-4 text-white/50" /><span className="text-white/50">Start:</span><span className="text-white">{formatDate(rental.startDate)}</span></div>

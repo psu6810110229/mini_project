@@ -135,19 +135,11 @@ export default function EquipmentDetail() {
                 Back to list
             </button>
 
-            {/* Success Message */}
-            {addedMessage && (
-                <div className="mb-6 flex gap-3 backdrop-blur-2xl bg-green-900/50 border border-green-500/30 rounded-xl p-4 shadow-lg animate-slide-in">
-                    <Check className="h-5 w-5 text-green-300 flex-shrink-0" />
-                    <p className="text-green-200 font-semibold">{addedMessage}</p>
-                </div>
-            )}
-
             {/* Equipment Card */}
             <div className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl overflow-hidden border border-white/20 shadow-xl animate-fade-in">
                 <div className="grid grid-cols-1 md:grid-cols-2">
                     {/* Image Section - White background */}
-                    <div className="h-64 md:h-auto bg-white flex items-center justify-center border-b md:border-b-0 md:border-r border-white/10 overflow-hidden">
+                    <div className="relative h-64 md:h-auto bg-white flex items-center justify-center border-b md:border-b-0 md:border-r border-white/10 overflow-hidden">
                         {equipment.imageUrl ? (
                             <img
                                 src={equipment.imageUrl}
@@ -158,6 +150,13 @@ export default function EquipmentDetail() {
                             <div className="flex flex-col items-center gap-2 text-gray-400">
                                 <Package className="w-16 h-16" />
                                 <span className="text-sm">No Image</span>
+                            </div>
+                        )}
+                        {/* Success Message Overlay */}
+                        {addedMessage && (
+                            <div className="absolute bottom-4 left-4 right-4 flex gap-2 items-center backdrop-blur-xl bg-green-600/90 rounded-xl px-4 py-3 shadow-lg animate-slide-in">
+                                <Check className="h-5 w-5 text-white flex-shrink-0" />
+                                <p className="text-white font-semibold text-sm">{addedMessage}</p>
                             </div>
                         )}
                     </div>
@@ -203,7 +202,7 @@ export default function EquipmentDetail() {
                                                     style={{ animationDelay: `${index * 50}ms` }}
                                                 >
                                                     <div className="text-left">
-                                                        <span className="font-bold text-white">Item Code: {item.itemCode}</span>
+                                                        <span className="font-bold text-white">Item: {item.itemCode}</span>
                                                         <span className="block text-xs text-green-400 font-medium">Available</span>
                                                     </div>
                                                     <div className="backdrop-blur-xl bg-white/10 group-hover:bg-blue-600 p-2 rounded-lg transition-all duration-300 group-hover:scale-110">
@@ -217,8 +216,8 @@ export default function EquipmentDetail() {
 
                                 {/* Items Already in Cart */}
                                 {inCartItems.length > 0 && (
-                                    <div className="mb-6">
-                                        <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                                    <div className="mb-6 mt-4">
+                                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                                             <ShoppingBag className="h-5 w-5" />
                                             Items in your rental list
                                         </h3>
@@ -229,7 +228,7 @@ export default function EquipmentDetail() {
                                                     className="flex items-center justify-between backdrop-blur-2xl bg-green-900/30 border border-green-500/30 rounded-xl p-3 animate-fade-in"
                                                 >
                                                     <div className="text-left">
-                                                        <span className="font-bold text-white">item code: {item.itemCode}</span>
+                                                        <span className="font-bold text-white">Item: {item.itemCode}</span>
                                                         <span className="block text-xs text-green-300 font-medium">Reserved</span>
                                                     </div>
                                                     <button
@@ -269,7 +268,7 @@ export default function EquipmentDetail() {
                                                     className="flex items-center justify-between backdrop-blur-2xl bg-amber-900/20 border border-amber-500/30 rounded-xl p-3 animate-fade-in"
                                                 >
                                                     <div className="text-left">
-                                                        <span className="font-bold text-white">Item Code: {rental.itemCode}</span>
+                                                        <span className="font-bold text-white">Item: {rental.itemCode}</span>
                                                         <span className="block text-xs text-amber-300 font-medium capitalize">
                                                             {rental.status.toLowerCase().replace('_', ' ')}
                                                         </span>
