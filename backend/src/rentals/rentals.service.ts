@@ -166,7 +166,7 @@ export class RentalsService {
         return rental;
     }
 
-    async updateStatus(id: string, updateStatusDto: UpdateRentalStatusDto): Promise<Rental> {
+    async updateStatus(id: string, updateStatusDto: UpdateRentalStatusDto): Promise<Rental & { autoRejectedRentals?: string[] }> {
         console.log('--- UPDATE STATUS CALLED ---');
         console.log('Rental ID:', id);
         console.log('New Status:', updateStatusDto.status);
@@ -178,6 +178,45 @@ export class RentalsService {
         console.log('Equipment ID:', rental.equipmentId);
 
         this.validateStatusTransition(rental.status, newStatus);
+
+        // When approving, auto-reject overlapping PENDING rentals for the same equipment item
+        let autoRejectedRentals: string[] = [];
+        if (newStatus === RentalStatus.APPROVED && rental.status === RentalStatus.PENDING) {
+            // Find overlapping PENDING rentals
+            const overlappingRentals = await this.rentalRepository
+                .createQueryBuilder('r')
+                .leftJoinAndSelect('r.user', 'user')
+                .where('r.id != :rentalId', { rentalId: id })
+                .andWhere('r.equipmentItemId = :itemId', { itemId: rental.equipmentItemId })
+                .andWhere('r.status = :status', { status: RentalStatus.PENDING })
+                .andWhere('r.startDate < :endDate', { endDate: rental.endDate })
+                .andWhere('r.endDate > :startDate', { startDate: rental.startDate })
+                .getMany();
+
+            // Auto-reject overlapping rentals
+            for (const overlapping of overlappingRentals) {
+                overlapping.status = RentalStatus.REJECTED;
+                await this.rentalRepository.save(overlapping);
+                autoRejectedRentals.push(`${overlapping.user?.name || 'Unknown'} (${overlapping.user?.studentId || 'N/A'})`);
+
+                // Log the auto-rejection
+                await this.auditLogsService.log(
+                    overlapping.userId,
+                    overlapping.user?.name || 'Unknown',
+                    'RENTAL_AUTO_REJECTED',
+                    overlapping.id,
+                    JSON.stringify({
+                        reason: 'Overlapping rental was approved',
+                        approvedRentalId: id,
+                        equipmentItemId: rental.equipmentItemId,
+                    }),
+                );
+            }
+
+            if (autoRejectedRentals.length > 0) {
+                console.log(`Auto-rejected ${autoRejectedRentals.length} overlapping rentals`);
+            }
+        }
 
         // Handle Stock Logic and Item Status
         if (newStatus === RentalStatus.CHECKED_OUT && rental.status !== RentalStatus.CHECKED_OUT) {
@@ -238,8 +277,11 @@ export class RentalsService {
                 equipmentName: rental.equipment?.name,
             }),
         );
-
-        return savedRental;
+        // Return with auto-rejected info
+        return {
+            ...savedRental,
+            autoRejectedRentals: autoRejectedRentals.length > 0 ? autoRejectedRentals : undefined,
+        };
     }
 
     private validateStatusTransition(currentStatus: RentalStatus, newStatus: RentalStatus): void {
