@@ -75,6 +75,24 @@ export class RentalsController {
         return this.rentalsService.findByUser(user.id);
     }
 
+    @Get('equipment/:equipmentId/active')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get active rentals for an equipment' })
+    @ApiResponse({ status: 200, description: 'List of active rentals for the equipment' })
+    async findActiveByEquipment(@Param('equipmentId', ParseUUIDPipe) equipmentId: string) {
+        const rentals = await this.rentalsService.findActiveByEquipment(equipmentId);
+        return rentals.map(r => ({
+            id: r.id,
+            status: r.status,
+            startDate: r.startDate,
+            endDate: r.endDate,
+            equipmentItemId: r.equipmentItemId,
+            itemCode: r.equipmentItem?.itemCode,
+            userName: r.user?.name || 'Unknown',
+        }));
+    }
+
     @Get(':id')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()

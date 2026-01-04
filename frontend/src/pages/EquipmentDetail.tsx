@@ -4,13 +4,24 @@ import apiClient from '../api/client';
 import type { Equipment, EquipmentItem } from '../types';
 import { UserRole, EquipmentItemStatus } from '../types';
 import { useCart } from '../context/CartContext';
-import { ClipboardList, Check, Plus, X, ArrowLeft, Package, ShoppingBag, AlertTriangle } from 'lucide-react';
+import { ClipboardList, Check, Plus, X, ArrowLeft, Package, ShoppingBag, AlertTriangle, Calendar, Clock } from 'lucide-react';
+
+interface ActiveRental {
+    id: string;
+    status: string;
+    startDate: string;
+    endDate: string;
+    equipmentItemId: string;
+    itemCode: string;
+    userName: string;
+}
 
 export default function EquipmentDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { addToCart, isInCart, removeFromCart } = useCart();
     const [equipment, setEquipment] = useState<Equipment | null>(null);
+    const [activeRentals, setActiveRentals] = useState<ActiveRental[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [addedMessage, setAddedMessage] = useState('');
@@ -30,13 +41,25 @@ export default function EquipmentDetail() {
 
     const fetchEquipment = async () => {
         try {
-            const response = await apiClient.get<Equipment>(`/equipments/${id}`);
-            setEquipment(response.data);
+            const [equipmentRes, rentalsRes] = await Promise.all([
+                apiClient.get<Equipment>(`/equipments/${id}`),
+                apiClient.get<ActiveRental[]>(`/rentals/equipment/${id}/active`).catch(() => ({ data: [] })),
+            ]);
+            setEquipment(equipmentRes.data);
+            setActiveRentals(rentalsRes.data);
         } catch (err) {
             setError('Failed to load equipment details');
         } finally {
             setLoading(false);
         }
+    };
+
+    const formatDate = (dateStr: string) => {
+        return new Date(dateStr).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+        });
     };
 
     const handleAddToCart = (item: EquipmentItem) => {
@@ -148,11 +171,11 @@ export default function EquipmentDetail() {
                                     {equipment.category}
                                 </span>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-sm font-bold ${equipment.status === 'AVAILABLE'
+                            <span className={`px-3 py-1 rounded-full text-sm font-bold ${availableItems.length > 0
                                 ? 'bg-green-600 text-white'
                                 : 'bg-red-600 text-white'
                                 }`}>
-                                {equipment.status === 'AVAILABLE' ? 'Available' : equipment.status}
+                                {availableItems.length > 0 ? 'Available' : 'Unavailable'}
                             </span>
                         </div>
 
@@ -229,6 +252,38 @@ export default function EquipmentDetail() {
                                         <p className="text-white/70 font-medium">
                                             No available items to rent at the moment
                                         </p>
+                                    </div>
+                                )}
+
+                                {/* Currently Rented Items */}
+                                {activeRentals.length > 0 && (
+                                    <div className="mt-6">
+                                        <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                                            <Clock className="h-5 w-5 text-amber-400" />
+                                            Currently Rented Items
+                                        </h3>
+                                        <div className="space-y-2">
+                                            {activeRentals.map((rental) => (
+                                                <div
+                                                    key={rental.id}
+                                                    className="flex items-center justify-between backdrop-blur-2xl bg-amber-900/20 border border-amber-500/30 rounded-xl p-3 animate-fade-in"
+                                                >
+                                                    <div className="text-left">
+                                                        <span className="font-bold text-white">Item Code: {rental.itemCode}</span>
+                                                        <span className="block text-xs text-amber-300 font-medium capitalize">
+                                                            {rental.status.toLowerCase().replace('_', ' ')}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-right text-sm">
+                                                        <div className="flex items-center gap-1 text-white/70">
+                                                            <Calendar className="h-3 w-3" />
+                                                            <span>{formatDate(rental.startDate)}</span>
+                                                        </div>
+                                                        <div className="text-white/50 text-xs">to {formatDate(rental.endDate)}</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
 

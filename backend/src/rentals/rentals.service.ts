@@ -142,6 +142,19 @@ export class RentalsService {
         });
     }
 
+    async findActiveByEquipment(equipmentId: string): Promise<Rental[]> {
+        return this.rentalRepository
+            .createQueryBuilder('rental')
+            .leftJoinAndSelect('rental.equipmentItem', 'equipmentItem')
+            .leftJoinAndSelect('rental.user', 'user')
+            .where('rental.equipmentId = :equipmentId', { equipmentId })
+            .andWhere('rental.status IN (:...activeStatuses)', {
+                activeStatuses: [RentalStatus.PENDING, RentalStatus.APPROVED, RentalStatus.CHECKED_OUT],
+            })
+            .orderBy('rental.startDate', 'ASC')
+            .getMany();
+    }
+
     async findOne(id: string): Promise<Rental> {
         const rental = await this.rentalRepository.findOne({
             where: { id },
