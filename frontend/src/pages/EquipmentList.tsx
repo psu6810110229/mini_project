@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import type { Equipment } from '../types';
 import { UserRole, EquipmentItemStatus } from '../types';
-import { Search, Package, Tag } from 'lucide-react';
+import { Search, Package, Tag, Check, X, Settings } from 'lucide-react';
 import { mergeWithEquipmentCategories } from '../components/CategoryManager';
 
 export default function EquipmentList() {
@@ -191,8 +191,8 @@ export default function EquipmentList() {
                                     <span className={filterStatus ? 'text-white' : 'text-white/40'}>
                                         {filterStatus ? (
                                             isAdmin ?
-                                                (filterStatus === 'AVAILABLE' ? '✓ Available' : filterStatus === 'MAINTENANCE' ? '⚙ Maintenance' : '✗ Unavailable') :
-                                                (filterStatus === 'HAS_AVAILABLE' ? '✓ Has Available Items' : '✗ No Available Items')
+                                                (filterStatus === 'AVAILABLE' ? <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Available</span> : filterStatus === 'MAINTENANCE' ? <span className="flex items-center gap-1.5"><Settings className="w-3.5 h-3.5" /> Maintenance</span> : <span className="flex items-center gap-1.5"><X className="w-3.5 h-3.5" /> Unavailable</span>) :
+                                                (filterStatus === 'HAS_AVAILABLE' ? <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Has Available Items</span> : <span className="flex items-center gap-1.5"><X className="w-3.5 h-3.5" /> No Available Items</span>)
                                         ) : 'All Equipment'}
                                     </span>
                                     <svg className={`w-4 h-4 text-white/60 transition-transform ${showAvailabilityDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -210,7 +210,7 @@ export default function EquipmentList() {
                                         </button>
                                         {isAdmin ? (
                                             <>
-                                                {[{ value: 'AVAILABLE', label: '✓ Available' }, { value: 'MAINTENANCE', label: '⚙ Maintenance' }, { value: 'UNAVAILABLE', label: '✗ Unavailable' }].map(opt => (
+                                                {[{ value: 'AVAILABLE', label: <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Available</span> }, { value: 'MAINTENANCE', label: <span className="flex items-center gap-1.5"><Settings className="w-3.5 h-3.5" /> Maintenance</span> }, { value: 'UNAVAILABLE', label: <span className="flex items-center gap-1.5"><X className="w-3.5 h-3.5" /> Unavailable</span> }].map(opt => (
                                                     <button
                                                         key={opt.value}
                                                         type="button"
@@ -223,7 +223,7 @@ export default function EquipmentList() {
                                             </>
                                         ) : (
                                             <>
-                                                {[{ value: 'HAS_AVAILABLE', label: '✓ Has Available Items' }, { value: 'NO_AVAILABLE', label: '✗ No Available Items' }].map(opt => (
+                                                {[{ value: 'HAS_AVAILABLE', label: <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Has Available Items</span> }, { value: 'NO_AVAILABLE', label: <span className="flex items-center gap-1.5"><X className="w-3.5 h-3.5" /> No Available Items</span> }].map(opt => (
                                                     <button
                                                         key={opt.value}
                                                         type="button"

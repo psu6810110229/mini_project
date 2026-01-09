@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import apiClient from '../api/client';
 import type { Equipment, EquipmentItem } from '../types';
 import { EquipmentItemStatus } from '../types';
-import { AlertCircle, CheckCircle, Trash2, Edit2, Plus, ChevronDown, Settings, X, Upload, Package, AlertTriangle, Tag } from 'lucide-react';
+import { AlertCircle, CheckCircle, Trash2, Edit2, Plus, ChevronDown, Settings, X, Upload, Package, AlertTriangle, Tag, Check, Circle } from 'lucide-react';
 import CategoryManager, { mergeWithEquipmentCategories } from '../components/CategoryManager';
 
 export default function AdminEquipments() {
@@ -374,7 +374,7 @@ export default function AdminEquipments() {
                                     className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-left text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 cursor-pointer flex items-center justify-between"
                                 >
                                     <span className={filterStatus ? 'text-white' : 'text-white/40'}>
-                                        {filterStatus ? (filterStatus === 'AVAILABLE' ? '✓ Available' : filterStatus === 'MAINTENANCE' ? '⚙ Maintenance' : filterStatus === 'UNAVAILABLE' ? '✗ Unavailable' : '◉ Rented') : 'All Statuses'}
+                                        {filterStatus ? (filterStatus === 'AVAILABLE' ? <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Available</span> : filterStatus === 'MAINTENANCE' ? <span className="flex items-center gap-1.5"><Settings className="w-3.5 h-3.5" /> Maintenance</span> : filterStatus === 'UNAVAILABLE' ? <span className="flex items-center gap-1.5"><X className="w-3.5 h-3.5" /> Unavailable</span> : <span className="flex items-center gap-1.5"><Circle className="w-3.5 h-3.5" /> Rented</span>) : 'All Statuses'}
                                     </span>
                                     <svg className={`w-4 h-4 text-white/60 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -390,10 +390,10 @@ export default function AdminEquipments() {
                                             All Statuses
                                         </button>
                                         {[
-                                            { value: 'AVAILABLE', label: '✓ Available' },
-                                            { value: 'MAINTENANCE', label: '⚙ Maintenance' },
-                                            { value: 'UNAVAILABLE', label: '✗ Unavailable' },
-                                            { value: 'RENTED', label: '◉ Rented' },
+                                            { value: 'AVAILABLE', label: <span className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5" /> Available</span> },
+                                            { value: 'MAINTENANCE', label: <span className="flex items-center gap-1.5"><Settings className="w-3.5 h-3.5" /> Maintenance</span> },
+                                            { value: 'UNAVAILABLE', label: <span className="flex items-center gap-1.5"><X className="w-3.5 h-3.5" /> Unavailable</span> },
+                                            { value: 'RENTED', label: <span className="flex items-center gap-1.5"><Circle className="w-3.5 h-3.5" /> Rented</span> },
                                         ].map(status => (
                                             <button
                                                 key={status.value}
@@ -549,9 +549,9 @@ export default function AdminEquipments() {
                                                             className="w-full text-sm backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-lg p-2 text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 cursor-pointer appearance-none transition-all duration-200"
                                                             style={{ colorScheme: 'dark' }}
                                                         >
-                                                            <option value="AVAILABLE" className="bg-slate-800">✓ Available</option>
-                                                            <option value="UNAVAILABLE" className="bg-slate-800">✗ Unavailable</option>
-                                                            <option value="RENTED" className="bg-slate-800">◉ Rented</option>
+                                                            <option value="AVAILABLE" className="bg-slate-800">Available</option>
+                                                            <option value="UNAVAILABLE" className="bg-slate-800">Unavailable</option>
+                                                            <option value="RENTED" className="bg-slate-800">Rented</option>
                                                         </select>
                                                         <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                                                             <svg className="w-3 h-3 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
