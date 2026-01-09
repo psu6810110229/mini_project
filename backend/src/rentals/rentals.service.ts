@@ -249,6 +249,8 @@ export class RentalsService {
             }
         }
 
+        // Save previous status before updating
+        const previousStatus = rental.status;
         rental.status = newStatus;
 
         // Save reject reason if provided and status is REJECTED
@@ -265,7 +267,7 @@ export class RentalsService {
             `RENTAL_STATUS_${newStatus}`,
             rental.id,
             JSON.stringify({
-                previousStatus: rental.status,
+                previousStatus,
                 newStatus,
                 equipmentId: rental.equipmentId,
                 equipmentItemId: rental.equipmentItemId,
