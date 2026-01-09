@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
 import type { Rental } from '../types';
-import { History, Package, Calendar, FileText, Clock, Loader, CheckCircle, ArrowUpRight, RotateCcw, XCircle, Ban, AlertTriangle, X, Activity, Archive } from 'lucide-react';
+import { History, Package, Calendar, FileText, Clock, Loader, CheckCircle, ArrowUpRight, RotateCcw, XCircle, Ban, AlertTriangle, X, Activity, Archive, Filter } from 'lucide-react';
 
 type TabType = 'active' | 'history';
+type ActiveStatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'CHECKED_OUT';
+type HistoryStatusFilter = 'ALL' | 'RETURNED' | 'REJECTED' | 'CANCELLED';
 
 export default function MyRentals() {
     const [rentals, setRentals] = useState<Rental[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState<TabType>('active');
+    const [activeStatusFilter, setActiveStatusFilter] = useState<ActiveStatusFilter>('ALL');
+    const [historyStatusFilter, setHistoryStatusFilter] = useState<HistoryStatusFilter>('ALL');
 
     // Cancel confirmation modal state
     const [showCancelModal, setShowCancelModal] = useState(false);
@@ -74,7 +78,7 @@ export default function MyRentals() {
             'CHECKED_OUT': { label: 'Checked Out', color: 'text-sky-400', bgColor: 'bg-sky-500/20 border-sky-500/30', Icon: ArrowUpRight },
             'RETURNED': { label: 'Returned', color: 'text-slate-400', bgColor: 'bg-slate-500/20 border-slate-500/30', Icon: RotateCcw },
             'REJECTED': { label: 'Rejected', color: 'text-rose-400', bgColor: 'bg-rose-500/20 border-rose-500/30', Icon: XCircle },
-            'CANCELLED': { label: 'Cancelled', color: 'text-rose-400', bgColor: 'bg-rose-500/20 border-rose-500/30', Icon: Ban },
+            'CANCELLED': { label: 'Cancelled', color: 'text-orange-400', bgColor: 'bg-orange-500/20 border-orange-500/30', Icon: Ban },
         };
         return map[status] || { label: status, color: 'text-slate-400', bgColor: 'bg-slate-500/20 border-slate-500/30', Icon: Package };
     };
@@ -97,15 +101,47 @@ export default function MyRentals() {
     const activeRentals = rentals.filter(r => activeStatuses.includes(r.status));
     const historyRentals = rentals.filter(r => historyStatuses.includes(r.status));
 
-    const displayedRentals = activeTab === 'active' ? activeRentals : historyRentals;
+    // Apply status filter
+    const filteredActiveRentals = activeStatusFilter === 'ALL'
+        ? activeRentals
+        : activeRentals.filter(r => r.status === activeStatusFilter);
 
-    // Summary stats
-    const stats = {
-        pending: rentals.filter(r => r.status === 'PENDING').length,
-        approved: rentals.filter(r => r.status === 'APPROVED').length,
-        checkedOut: rentals.filter(r => r.status === 'CHECKED_OUT').length,
-        returned: rentals.filter(r => r.status === 'RETURNED').length,
+    const filteredHistoryRentals = historyStatusFilter === 'ALL'
+        ? historyRentals
+        : historyRentals.filter(r => r.status === historyStatusFilter);
+
+    const displayedRentals = activeTab === 'active' ? filteredActiveRentals : filteredHistoryRentals;
+
+    // Status counts for Active tab
+    const activeStatusCounts = {
+        ALL: activeRentals.length,
+        PENDING: activeRentals.filter(r => r.status === 'PENDING').length,
+        APPROVED: activeRentals.filter(r => r.status === 'APPROVED').length,
+        CHECKED_OUT: activeRentals.filter(r => r.status === 'CHECKED_OUT').length,
     };
+
+    // Status counts for History tab
+    const historyStatusCounts = {
+        ALL: historyRentals.length,
+        RETURNED: historyRentals.filter(r => r.status === 'RETURNED').length,
+        REJECTED: historyRentals.filter(r => r.status === 'REJECTED').length,
+        CANCELLED: historyRentals.filter(r => r.status === 'CANCELLED').length,
+    };
+
+    // Filter button configs
+    const activeFilterButtons: { key: ActiveStatusFilter; label: string; color: string; icon?: React.ReactNode }[] = [
+        { key: 'ALL', label: 'All', color: 'bg-slate-600' },
+        { key: 'PENDING', label: 'Pending', color: 'bg-amber-600', icon: <Loader className="w-4 h-4" /> },
+        { key: 'APPROVED', label: 'Approved', color: 'bg-emerald-600', icon: <CheckCircle className="w-4 h-4" /> },
+        { key: 'CHECKED_OUT', label: 'Checked Out', color: 'bg-sky-600', icon: <ArrowUpRight className="w-4 h-4" /> },
+    ];
+
+    const historyFilterButtons: { key: HistoryStatusFilter; label: string; color: string; icon?: React.ReactNode }[] = [
+        { key: 'ALL', label: 'All', color: 'bg-slate-600' },
+        { key: 'RETURNED', label: 'Returned', color: 'bg-slate-500', icon: <RotateCcw className="w-4 h-4" /> },
+        { key: 'REJECTED', label: 'Rejected', color: 'bg-rose-600', icon: <XCircle className="w-4 h-4" /> },
+        { key: 'CANCELLED', label: 'Cancelled', color: 'bg-orange-600', icon: <Ban className="w-4 h-4" /> },
+    ];
 
     if (loading) return <div className="min-h-[80vh] flex items-center justify-center"><div className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl p-8 border border-white/20 shadow-xl"><span className="text-white">Loading...</span></div></div>;
     if (error && rentals.length === 0) return <div className="min-h-[80vh] flex items-center justify-center"><div className="backdrop-blur-2xl bg-red-900/50 rounded-2xl p-8 border border-red-500/30 shadow-xl"><p className="text-red-200">{error}</p></div></div>;
@@ -128,42 +164,10 @@ export default function MyRentals() {
                 </div>
             )}
 
-            {/* Summary Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                <div className="backdrop-blur-2xl bg-amber-500/10 rounded-xl p-4 border border-amber-500/20">
-                    <div className="flex items-center gap-2 text-amber-400 mb-1">
-                        <Loader className="w-4 h-4" />
-                        <span className="text-sm font-medium">Pending</span>
-                    </div>
-                    <p className="text-2xl font-bold text-white">{stats.pending}</p>
-                </div>
-                <div className="backdrop-blur-2xl bg-emerald-500/10 rounded-xl p-4 border border-emerald-500/20">
-                    <div className="flex items-center gap-2 text-emerald-400 mb-1">
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="text-sm font-medium">Approved</span>
-                    </div>
-                    <p className="text-2xl font-bold text-white">{stats.approved}</p>
-                </div>
-                <div className="backdrop-blur-2xl bg-sky-500/10 rounded-xl p-4 border border-sky-500/20">
-                    <div className="flex items-center gap-2 text-sky-400 mb-1">
-                        <ArrowUpRight className="w-4 h-4" />
-                        <span className="text-sm font-medium">Checked Out</span>
-                    </div>
-                    <p className="text-2xl font-bold text-white">{stats.checkedOut}</p>
-                </div>
-                <div className="backdrop-blur-2xl bg-slate-500/10 rounded-xl p-4 border border-slate-500/20">
-                    <div className="flex items-center gap-2 text-slate-400 mb-1">
-                        <RotateCcw className="w-4 h-4" />
-                        <span className="text-sm font-medium">Returned</span>
-                    </div>
-                    <p className="text-2xl font-bold text-white">{stats.returned}</p>
-                </div>
-            </div>
-
             {/* Tab Navigation */}
             <div className="flex gap-2 mb-6">
                 <button
-                    onClick={() => setActiveTab('active')}
+                    onClick={() => { setActiveTab('active'); setActiveStatusFilter('ALL'); }}
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all duration-200 ${activeTab === 'active'
                         ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
                         : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50 hover:text-white border border-white/10'
@@ -178,7 +182,7 @@ export default function MyRentals() {
                     )}
                 </button>
                 <button
-                    onClick={() => setActiveTab('history')}
+                    onClick={() => { setActiveTab('history'); setHistoryStatusFilter('ALL'); }}
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all duration-200 ${activeTab === 'history'
                         ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg'
                         : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50 hover:text-white border border-white/10'
@@ -192,6 +196,51 @@ export default function MyRentals() {
                         </span>
                     )}
                 </button>
+            </div>
+
+            {/* Status Filter Chips */}
+            <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                    <Filter className="w-5 h-5 text-white/70" />
+                    <span className="text-white/70 font-medium">Filter by Status</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {activeTab === 'active' ? (
+                        activeFilterButtons.map(({ key, label, color, icon }) => (
+                            <button
+                                key={key}
+                                onClick={() => setActiveStatusFilter(key)}
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border ${activeStatusFilter === key
+                                    ? `${color} text-white border-white/30 shadow-lg scale-105`
+                                    : 'bg-slate-800/50 text-white/70 border-white/10 hover:bg-slate-700/50 hover:text-white'
+                                    }`}
+                            >
+                                {icon}
+                                {label}
+                                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${activeStatusFilter === key ? 'bg-white/20' : 'bg-white/10'}`}>
+                                    {activeStatusCounts[key]}
+                                </span>
+                            </button>
+                        ))
+                    ) : (
+                        historyFilterButtons.map(({ key, label, color, icon }) => (
+                            <button
+                                key={key}
+                                onClick={() => setHistoryStatusFilter(key)}
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border ${historyStatusFilter === key
+                                    ? `${color} text-white border-white/30 shadow-lg scale-105`
+                                    : 'bg-slate-800/50 text-white/70 border-white/10 hover:bg-slate-700/50 hover:text-white'
+                                    }`}
+                            >
+                                {icon}
+                                {label}
+                                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${historyStatusFilter === key ? 'bg-white/20' : 'bg-white/10'}`}>
+                                    {historyStatusCounts[key]}
+                                </span>
+                            </button>
+                        ))
+                    )}
+                </div>
             </div>
 
             {/* Rental Cards */}
@@ -219,9 +268,18 @@ export default function MyRentals() {
                         return (
                             <div key={rental.id} className={`backdrop-blur-2xl bg-slate-900/60 rounded-2xl border overflow-hidden shadow-xl transition-all duration-300 hover:bg-slate-800/60 ${st.bgColor}`} style={{ animationDelay: `${idx * 50}ms` }}>
                                 <div className="flex flex-col md:flex-row">
-                                    {/* Image */}
-                                    <div className="md:w-36 h-36 flex-shrink-0 bg-white flex items-center justify-center overflow-hidden border-b md:border-b-0 md:border-r border-white/10">
-                                        {rental.equipment?.imageUrl ? <img src={rental.equipment.imageUrl} alt="" className="w-full h-full object-contain p-3" /> : <Package className="w-12 h-12 text-gray-400" />}
+                                    {/* Image - Fixed aspect ratio container */}
+                                    <div className="md:w-40 w-full h-40 md:h-auto flex-shrink-0 bg-white flex items-center justify-center overflow-hidden border-b md:border-b-0 md:border-r border-white/10">
+                                        {rental.equipment?.imageUrl ? (
+                                            <img
+                                                src={rental.equipment.imageUrl}
+                                                alt=""
+                                                className="w-full h-full object-cover md:object-contain p-2"
+                                                style={{ maxHeight: '160px' }}
+                                            />
+                                        ) : (
+                                            <Package className="w-12 h-12 text-gray-400" />
+                                        )}
                                     </div>
 
                                     {/* Content */}

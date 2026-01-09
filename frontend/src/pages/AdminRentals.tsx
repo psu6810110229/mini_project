@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
 import type { Rental } from '../types';
-import { ClipboardList, AlertTriangle, CheckCircle, Package, X, FileText, Filter, Eye, AlertOctagon, CheckSquare, Square, Loader, Search, History, Activity } from 'lucide-react';
+import { ClipboardList, AlertTriangle, CheckCircle, Package, X, FileText, Filter, Eye, AlertOctagon, CheckSquare, Square, Loader, Search, History, Activity, RotateCcw, XCircle, Ban } from 'lucide-react';
 
 type StatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'CHECKED_OUT' | 'OVERLAPPING';
+type HistoryStatusFilter = 'ALL' | 'RETURNED' | 'REJECTED' | 'CANCELLED';
 type TabType = 'active' | 'history';
 
 export default function AdminRentals() {
@@ -13,6 +14,7 @@ export default function AdminRentals() {
     const [confirmAction, setConfirmAction] = useState<{ id: string; status: string; userName: string; equipmentName?: string } | null>(null);
     const [successMessage, setSuccessMessage] = useState('');
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+    const [historyStatusFilter, setHistoryStatusFilter] = useState<HistoryStatusFilter>('ALL');
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedRental, setSelectedRental] = useState<any>(null);
 
@@ -104,6 +106,9 @@ export default function AdminRentals() {
         if (activeTab === 'active') {
             if (statusFilter === 'OVERLAPPING') return overlappingRentalIds.has(rental.id);
             if (statusFilter !== 'ALL' && rental.status !== statusFilter) return false;
+        } else {
+            // History tab filtering
+            if (historyStatusFilter !== 'ALL' && rental.status !== historyStatusFilter) return false;
         }
 
         // Then filter by search query (user name, student ID, equipment name)
@@ -211,12 +216,26 @@ export default function AdminRentals() {
         OVERLAPPING: overlappingRentalIds.size,
     };
 
+    const historyStatusCounts: Record<HistoryStatusFilter, number> = {
+        ALL: rentals.filter(r => historyStatuses.includes(r.status)).length,
+        RETURNED: rentals.filter(r => r.status === 'RETURNED').length,
+        REJECTED: rentals.filter(r => r.status === 'REJECTED').length,
+        CANCELLED: rentals.filter(r => r.status === 'CANCELLED').length,
+    };
+
     const filterButtons: { key: StatusFilter; label: string; color: string; icon?: React.ReactNode }[] = [
         { key: 'ALL', label: 'All', color: 'bg-slate-600' },
         { key: 'OVERLAPPING', label: 'Conflicts', color: 'bg-orange-600', icon: <AlertOctagon className="w-4 h-4" /> },
-        { key: 'PENDING', label: 'Pending', color: 'bg-yellow-600' },
-        { key: 'APPROVED', label: 'Approved', color: 'bg-green-600' },
-        { key: 'CHECKED_OUT', label: 'Checked Out', color: 'bg-blue-600' },
+        { key: 'PENDING', label: 'Pending', color: 'bg-yellow-600', icon: <Loader className="w-4 h-4" /> },
+        { key: 'APPROVED', label: 'Approved', color: 'bg-green-600', icon: <CheckCircle className="w-4 h-4" /> },
+        { key: 'CHECKED_OUT', label: 'Checked Out', color: 'bg-blue-600', icon: <Package className="w-4 h-4" /> },
+    ];
+
+    const historyFilterButtons: { key: HistoryStatusFilter; label: string; color: string; icon?: React.ReactNode }[] = [
+        { key: 'ALL', label: 'All', color: 'bg-slate-600' },
+        { key: 'RETURNED', label: 'Returned', color: 'bg-slate-500', icon: <RotateCcw className="w-4 h-4" /> },
+        { key: 'REJECTED', label: 'Rejected', color: 'bg-rose-600', icon: <XCircle className="w-4 h-4" /> },
+        { key: 'CANCELLED', label: 'Cancelled', color: 'bg-orange-600', icon: <Ban className="w-4 h-4" /> },
     ];
 
     const handleRejectClick = (rental: Rental) => {
@@ -376,7 +395,7 @@ export default function AdminRentals() {
                     </span>
                 </button>
                 <button
-                    onClick={() => { setActiveTab('history'); setStatusFilter('ALL'); }}
+                    onClick={() => { setActiveTab('history'); setHistoryStatusFilter('ALL'); }}
                     className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all duration-200 ${activeTab === 'history'
                         ? 'bg-slate-600 text-white shadow-lg'
                         : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50'
@@ -412,15 +431,15 @@ export default function AdminRentals() {
                 </div>
             </div>
 
-            {/* Status Filter - Only show for Active tab */}
-            {activeTab === 'active' && (
-                <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                        <Filter className="w-5 h-5 text-white/70" />
-                        <span className="text-white/70 font-medium">Filter by Status</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {filterButtons.map(({ key, label, color, icon }) => (
+            {/* Status Filter */}
+            <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                    <Filter className="w-5 h-5 text-white/70" />
+                    <span className="text-white/70 font-medium">Filter by Status</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {activeTab === 'active' ? (
+                        filterButtons.map(({ key, label, color, icon }) => (
                             <button
                                 key={key}
                                 onClick={() => setStatusFilter(key)}
@@ -431,15 +450,31 @@ export default function AdminRentals() {
                             >
                                 {icon}
                                 {label}
-                                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${statusFilter === key ? 'bg-white/20' : 'bg-white/10'
-                                    }`}>
+                                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${statusFilter === key ? 'bg-white/20' : 'bg-white/10'}`}>
                                     {statusCounts[key]}
                                 </span>
                             </button>
-                        ))}
-                    </div>
+                        ))
+                    ) : (
+                        historyFilterButtons.map(({ key, label, color, icon }) => (
+                            <button
+                                key={key}
+                                onClick={() => setHistoryStatusFilter(key)}
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border ${historyStatusFilter === key
+                                    ? `${color} text-white border-white/30 shadow-lg scale-105`
+                                    : 'bg-slate-800/50 text-white/70 border-white/10 hover:bg-slate-700/50 hover:text-white'
+                                    }`}
+                            >
+                                {icon}
+                                {label}
+                                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${historyStatusFilter === key ? 'bg-white/20' : 'bg-white/10'}`}>
+                                    {historyStatusCounts[key]}
+                                </span>
+                            </button>
+                        ))
+                    )}
                 </div>
-            )}
+            </div>
 
             {/* Selection Bar - Fixed at bottom when items are selected */}
             {selectedIds.size > 0 && (
