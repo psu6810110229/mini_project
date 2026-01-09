@@ -167,9 +167,18 @@ button:focus-visible {
   color: white;
 }
 
-/* Custom select dropdown styling */
+/* Custom select dropdown styling - reset browser defaults for rounded corners */
 select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
   background-image: none;
+  border-radius: 0.75rem !important;
+}
+
+/* Ensure select maintains rounded corners */
+select:not([multiple]) {
+  border-radius: 0.75rem !important;
 }
 
 select option {
@@ -192,10 +201,17 @@ select option:checked {
   select {
     text-indent: 0.01px;
     text-overflow: '';
+    -moz-appearance: none;
+    border-radius: 0.75rem !important;
   }
 
   select option {
     background-color: #1e293b;
     color: white;
   }
+}
+
+/* Edge/IE select styling */
+select::-ms-expand {
+  display: none;
 }

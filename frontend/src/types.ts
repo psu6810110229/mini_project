@@ -60,6 +60,8 @@ export interface Rental {
   endDate: string;
   status: RentalStatus;
   requestDetails?: string;
+  rejectReason?: string;
+  user?: User;
 }
 
 export interface AuthResponse {

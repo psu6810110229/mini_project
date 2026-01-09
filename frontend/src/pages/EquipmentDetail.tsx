@@ -4,7 +4,7 @@ import apiClient from '../api/client';
 import type { Equipment, EquipmentItem } from '../types';
 import { UserRole, EquipmentItemStatus } from '../types';
 import { useCart } from '../context/CartContext';
-import { ClipboardList, Check, Plus, X, ArrowLeft, Package, ShoppingBag, AlertTriangle, Calendar, Clock } from 'lucide-react';
+import { Check, Plus, X, ArrowLeft, Package, ShoppingBag, AlertTriangle, Calendar, Clock } from 'lucide-react';
 
 interface ActiveRental {
     id: string;
@@ -265,26 +265,38 @@ export default function EquipmentDetail() {
                                     <div className="mt-6">
                                         <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
                                             <Clock className="h-5 w-5 text-amber-400" />
-                                            Currently Rented Items
+                                            Currently Rented Items ({activeRentals.length})
                                         </h3>
-                                        <div className="space-y-2">
+                                        <div className="space-y-3">
                                             {activeRentals.map((rental) => (
                                                 <div
                                                     key={rental.id}
-                                                    className="flex items-center justify-between backdrop-blur-2xl bg-amber-900/20 border border-amber-500/30 rounded-xl p-3 animate-fade-in"
+                                                    className="backdrop-blur-2xl bg-amber-900/20 border border-amber-500/30 rounded-xl p-4 animate-fade-in"
                                                 >
-                                                    <div className="text-left">
-                                                        <span className="font-bold text-white">Item: {rental.itemCode}</span>
-                                                        <span className="block text-xs text-amber-300 font-medium capitalize">
-                                                            {rental.status.toLowerCase().replace('_', ' ')}
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-right text-sm">
-                                                        <div className="flex items-center gap-1 text-white/70">
-                                                            <Calendar className="h-3 w-3" />
-                                                            <span>{formatDate(rental.startDate)}</span>
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="font-bold text-white">Item: {rental.itemCode}</span>
+                                                                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/30 text-amber-300 capitalize">
+                                                                    {rental.status.toLowerCase().replace('_', ' ')}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1.5 text-sm text-white/70">
+                                                                <svg className="w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                                </svg>
+                                                                <span>Borrowed by: <span className="text-white font-medium">{rental.userName || 'Unknown User'}</span></span>
+                                                            </div>
                                                         </div>
-                                                        <div className="text-white/50 text-xs">to {formatDate(rental.endDate)}</div>
+                                                        <div className="text-right text-sm flex-shrink-0">
+                                                            <div className="flex items-center gap-1.5 text-white/70 mb-0.5">
+                                                                <Calendar className="h-3.5 w-3.5" />
+                                                                <span className="font-medium text-white">{formatDate(rental.startDate)}</span>
+                                                            </div>
+                                                            <div className="text-white/50 text-xs">
+                                                                to {formatDate(rental.endDate)}
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}

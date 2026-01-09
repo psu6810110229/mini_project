@@ -1,19 +1,36 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
 import type { Rental } from '../types';
-import { ClipboardList, AlertTriangle, CheckCircle, Package, X, FileText, Filter, Eye, AlertOctagon } from 'lucide-react';
+import { ClipboardList, AlertTriangle, CheckCircle, Package, X, FileText, Filter, Eye, AlertOctagon, CheckSquare, Square, Loader, Search, History, Activity } from 'lucide-react';
 
-type StatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'CHECKED_OUT' | 'RETURNED' | 'REJECTED' | 'CANCELLED' | 'OVERLAPPING';
+type StatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'CHECKED_OUT' | 'OVERLAPPING';
+type TabType = 'active' | 'history';
 
 export default function AdminRentals() {
     const [rentals, setRentals] = useState<Rental[]>([]);
     const [loading, setLoading] = useState(true);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [confirmAction, setConfirmAction] = useState<{ id: string; status: string; userName: string } | null>(null);
+    const [confirmAction, setConfirmAction] = useState<{ id: string; status: string; userName: string; equipmentName?: string } | null>(null);
     const [successMessage, setSuccessMessage] = useState('');
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedRental, setSelectedRental] = useState<any>(null);
+
+    // Tab and search state
+    const [activeTab, setActiveTab] = useState<TabType>('active');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Reject modal with optional note
+    const [showRejectModal, setShowRejectModal] = useState(false);
+    const [rejectingRental, setRejectingRental] = useState<{ id: string; userName: string; equipmentName: string } | null>(null);
+    const [rejectNote, setRejectNote] = useState('');
+
+    // Multi-select state
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [showBatchModal, setShowBatchModal] = useState(false);
+    const [batchAction, setBatchAction] = useState<'APPROVED' | 'CHECKED_OUT' | 'RETURNED' | null>(null);
+    const [batchProcessing, setBatchProcessing] = useState(false);
+    const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, errors: [] as string[] });
 
     useEffect(() => {
         fetchRentals();
@@ -73,10 +90,34 @@ export default function AdminRentals() {
 
     const overlappingRentalIds = getOverlappingRentalIds();
 
+    // Define which statuses are active vs history
+    const activeStatuses = ['PENDING', 'APPROVED', 'CHECKED_OUT'];
+    const historyStatuses = ['RETURNED', 'REJECTED', 'CANCELLED'];
+
+    // Filter rentals based on tab, status filter, and search
     const filteredRentals = rentals.filter(rental => {
-        if (statusFilter === 'ALL') return true;
-        if (statusFilter === 'OVERLAPPING') return overlappingRentalIds.has(rental.id);
-        return rental.status === statusFilter;
+        // First filter by tab
+        const tabStatuses = activeTab === 'active' ? activeStatuses : historyStatuses;
+        if (!tabStatuses.includes(rental.status)) return false;
+
+        // Then filter by status (within the tab)
+        if (activeTab === 'active') {
+            if (statusFilter === 'OVERLAPPING') return overlappingRentalIds.has(rental.id);
+            if (statusFilter !== 'ALL' && rental.status !== statusFilter) return false;
+        }
+
+        // Then filter by search query (user name, student ID, equipment name)
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            const userName = rental.user?.name?.toLowerCase() || '';
+            const studentId = rental.user?.studentId?.toLowerCase() || '';
+            const equipName = rental.equipment?.name?.toLowerCase() || '';
+            if (!userName.includes(query) && !studentId.includes(query) && !equipName.includes(query)) {
+                return false;
+            }
+        }
+
+        return true;
     });
 
     const showConfirmation = (id: string, status: string, userName: string) => {
@@ -163,25 +204,125 @@ export default function AdminRentals() {
     };
 
     const statusCounts: Record<StatusFilter, number> = {
-        ALL: rentals.length,
+        ALL: rentals.filter(r => activeStatuses.includes(r.status)).length,
         PENDING: rentals.filter(r => r.status === 'PENDING').length,
         APPROVED: rentals.filter(r => r.status === 'APPROVED').length,
         CHECKED_OUT: rentals.filter(r => r.status === 'CHECKED_OUT').length,
-        RETURNED: rentals.filter(r => r.status === 'RETURNED').length,
-        REJECTED: rentals.filter(r => r.status === 'REJECTED').length,
-        CANCELLED: rentals.filter(r => r.status === 'CANCELLED').length,
         OVERLAPPING: overlappingRentalIds.size,
     };
 
     const filterButtons: { key: StatusFilter; label: string; color: string; icon?: React.ReactNode }[] = [
         { key: 'ALL', label: 'All', color: 'bg-slate-600' },
-        { key: 'OVERLAPPING', label: 'Overlapping', color: 'bg-orange-600', icon: <AlertOctagon className="w-4 h-4" /> },
+        { key: 'OVERLAPPING', label: 'Conflicts', color: 'bg-orange-600', icon: <AlertOctagon className="w-4 h-4" /> },
         { key: 'PENDING', label: 'Pending', color: 'bg-yellow-600' },
         { key: 'APPROVED', label: 'Approved', color: 'bg-green-600' },
         { key: 'CHECKED_OUT', label: 'Checked Out', color: 'bg-blue-600' },
-        { key: 'RETURNED', label: 'Returned', color: 'bg-gray-600' },
-        { key: 'REJECTED', label: 'Rejected', color: 'bg-red-600' },
     ];
+
+    const handleRejectClick = (rental: Rental) => {
+        setRejectingRental({
+            id: rental.id,
+            userName: rental.user?.name || 'User',
+            equipmentName: rental.equipment?.name || 'Equipment',
+        });
+        setRejectNote(''); // Reset note when opening modal
+        setShowRejectModal(true);
+    };
+
+    const [rejectLoading, setRejectLoading] = useState(false);
+
+    const handleConfirmReject = async () => {
+        if (!rejectingRental) return;
+
+        setRejectLoading(true);
+
+        try {
+            // Build request body - only include rejectReason if note is provided
+            const requestBody: { status: string; rejectReason?: string } = {
+                status: 'REJECTED',
+            };
+            if (rejectNote.trim()) {
+                requestBody.rejectReason = rejectNote.trim();
+            }
+
+            await apiClient.patch(`/rentals/${rejectingRental.id}/status`, requestBody);
+            setSuccessMessage(`Rejected request from ${rejectingRental.userName}`);
+            await fetchRentals();
+            setShowRejectModal(false);
+            setRejectingRental(null);
+            setRejectNote('');
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } catch (err: any) {
+            console.error('Failed to reject rental:', err);
+            // Show error in success message (as error)
+            setSuccessMessage('Failed to reject rental. Please try again.');
+            setTimeout(() => setSuccessMessage(''), 3000);
+        } finally {
+            setRejectLoading(false);
+        }
+    };
+
+    // Multi-select functions
+    const toggleSelect = (id: string) => {
+        setSelectedIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) {
+                newSet.delete(id);
+            } else {
+                newSet.add(id);
+            }
+            return newSet;
+        });
+    };
+
+    const clearSelection = () => {
+        setSelectedIds(new Set());
+    };
+
+    const openBatchModal = (action: 'APPROVED' | 'CHECKED_OUT' | 'RETURNED') => {
+        setBatchAction(action);
+        setBatchProgress({ current: 0, total: selectedIds.size, errors: [] });
+        setShowBatchModal(true);
+    };
+
+    const handleBatchAction = async () => {
+        if (!batchAction || selectedIds.size === 0) return;
+
+        setBatchProcessing(true);
+        const ids = Array.from(selectedIds);
+        const errors: string[] = [];
+
+        for (let i = 0; i < ids.length; i++) {
+            try {
+                await apiClient.patch(`/rentals/${ids[i]}/status`, { status: batchAction });
+                setBatchProgress(prev => ({ ...prev, current: i + 1 }));
+            } catch (err: any) {
+                const rental = rentals.find(r => r.id === ids[i]);
+                errors.push(`${rental?.user?.name || 'Unknown'}: ${err.response?.data?.message || 'Failed'}`);
+            }
+        }
+
+        setBatchProgress(prev => ({ ...prev, errors }));
+        await fetchRentals();
+        clearSelection();
+        setBatchProcessing(false);
+
+        if (errors.length === 0) {
+            setShowBatchModal(false);
+            setSuccessMessage(`Successfully processed ${ids.length} rentals`);
+            setTimeout(() => setSuccessMessage(''), 3000);
+        }
+    };
+
+    // Get counts of selectable items for current selection
+    const getSelectedByStatus = () => {
+        const selected = rentals.filter(r => selectedIds.has(r.id));
+        return {
+            PENDING: selected.filter(r => r.status === 'PENDING').length,
+            APPROVED: selected.filter(r => r.status === 'APPROVED').length,
+            CHECKED_OUT: selected.filter(r => r.status === 'CHECKED_OUT').length,
+        };
+    };
 
     if (loading) {
         return (
@@ -210,47 +351,170 @@ export default function AdminRentals() {
             )}
 
             {/* Header */}
-            <div className="flex items-center gap-3 mb-6">
-                <ClipboardList className="w-8 h-8 text-white" />
-                <h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>
-                    Manage Rentals
-                </h1>
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <ClipboardList className="w-8 h-8 text-white" />
+                    <h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>
+                        Manage Rentals
+                    </h1>
+                </div>
             </div>
 
-            {/* Status Filter */}
+            {/* Tabs */}
+            <div className="flex gap-2 mb-6">
+                <button
+                    onClick={() => { setActiveTab('active'); setStatusFilter('ALL'); }}
+                    className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all duration-200 ${activeTab === 'active'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50'
+                        }`}
+                >
+                    <Activity className="w-5 h-5" />
+                    Active
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'active' ? 'bg-white/20' : 'bg-white/10'}`}>
+                        {rentals.filter(r => activeStatuses.includes(r.status)).length}
+                    </span>
+                </button>
+                <button
+                    onClick={() => { setActiveTab('history'); setStatusFilter('ALL'); }}
+                    className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all duration-200 ${activeTab === 'history'
+                        ? 'bg-slate-600 text-white shadow-lg'
+                        : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50'
+                        }`}
+                >
+                    <History className="w-5 h-5" />
+                    History
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'history' ? 'bg-white/20' : 'bg-white/10'}`}>
+                        {rentals.filter(r => historyStatuses.includes(r.status)).length}
+                    </span>
+                </button>
+            </div>
+
+            {/* Search Bar */}
             <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3">
-                    <Filter className="w-5 h-5 text-white/70" />
-                    <span className="text-white/70 font-medium">Filter by Status</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    {filterButtons.map(({ key, label, color, icon }) => (
+                <div className="relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/50" />
+                    <input
+                        type="text"
+                        placeholder="Search by user name, student ID, or equipment..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
+                    />
+                    {searchQuery && (
                         <button
-                            key={key}
-                            onClick={() => setStatusFilter(key)}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border ${statusFilter === key
-                                ? `${color} text-white border-white/30 shadow-lg scale-105`
-                                : 'bg-slate-800/50 text-white/70 border-white/10 hover:bg-slate-700/50 hover:text-white'
-                                }`}
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white"
                         >
-                            {icon}
-                            {label}
-                            <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${statusFilter === key ? 'bg-white/20' : 'bg-white/10'
-                                }`}>
-                                {statusCounts[key]}
-                            </span>
+                            <X className="w-5 h-5" />
                         </button>
-                    ))}
+                    )}
                 </div>
             </div>
+
+            {/* Status Filter - Only show for Active tab */}
+            {activeTab === 'active' && (
+                <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Filter className="w-5 h-5 text-white/70" />
+                        <span className="text-white/70 font-medium">Filter by Status</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {filterButtons.map(({ key, label, color, icon }) => (
+                            <button
+                                key={key}
+                                onClick={() => setStatusFilter(key)}
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border ${statusFilter === key
+                                    ? `${color} text-white border-white/30 shadow-lg scale-105`
+                                    : 'bg-slate-800/50 text-white/70 border-white/10 hover:bg-slate-700/50 hover:text-white'
+                                    }`}
+                            >
+                                {icon}
+                                {label}
+                                <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${statusFilter === key ? 'bg-white/20' : 'bg-white/10'
+                                    }`}>
+                                    {statusCounts[key]}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Selection Bar - Fixed at bottom when items are selected */}
+            {selectedIds.size > 0 && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-slide-up">
+                    <div className="backdrop-blur-2xl bg-slate-900/95 rounded-2xl border border-white/20 shadow-2xl p-4 flex items-center gap-4">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 rounded-xl border border-blue-500/30">
+                            <CheckSquare className="w-5 h-5 text-blue-400" />
+                            <span className="text-white font-bold">{selectedIds.size}</span>
+                            <span className="text-white/70">selected</span>
+                        </div>
+
+                        {(() => {
+                            const counts = getSelectedByStatus();
+                            return (
+                                <>
+                                    {counts.PENDING > 0 && (
+                                        <button
+                                            onClick={() => openBatchModal('APPROVED')}
+                                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg"
+                                        >
+                                            <CheckCircle className="w-4 h-4" />
+                                            Approve ({counts.PENDING})
+                                        </button>
+                                    )}
+                                    {counts.APPROVED > 0 && (
+                                        <button
+                                            onClick={() => openBatchModal('CHECKED_OUT')}
+                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg"
+                                        >
+                                            <Package className="w-4 h-4" />
+                                            Checkout ({counts.APPROVED})
+                                        </button>
+                                    )}
+                                    {counts.CHECKED_OUT > 0 && (
+                                        <button
+                                            onClick={() => openBatchModal('RETURNED')}
+                                            className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg"
+                                        >
+                                            Return ({counts.CHECKED_OUT})
+                                        </button>
+                                    )}
+                                </>
+                            );
+                        })()}
+
+                        <button
+                            onClick={clearSelection}
+                            className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Rental Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-24">
                 {filteredRentals.map((rental: any) => (
                     <div
                         key={rental.id}
-                        className={`backdrop-blur-2xl bg-slate-900/60 rounded-2xl border-2 overflow-hidden shadow-xl transition-all duration-300 hover:scale-[1.02] ${getStatusBorderColor(rental.status)}`}
+                        className={`relative backdrop-blur-2xl bg-slate-900/60 rounded-2xl border-2 overflow-hidden shadow-xl transition-all duration-300 hover:scale-[1.02] ${getStatusBorderColor(rental.status)} ${selectedIds.has(rental.id) ? 'ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900' : ''}`}
                     >
+                        {/* Checkbox - only show for actionable statuses */}
+                        {!['REJECTED', 'RETURNED', 'CANCELLED'].includes(rental.status) && (
+                            <button
+                                onClick={() => toggleSelect(rental.id)}
+                                className={`absolute top-2 left-2 z-10 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 ${selectedIds.has(rental.id)
+                                    ? 'bg-blue-500 text-white shadow-lg'
+                                    : 'bg-black/40 hover:bg-black/60 text-white/70 hover:text-white'
+                                    }`}
+                            >
+                                {selectedIds.has(rental.id) ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                            </button>
+                        )}
+
                         {/* Equipment Image */}
                         <div className="relative h-32 bg-white flex items-center justify-center border-b border-white/10">
                             {rental.equipment?.imageUrl ? (
@@ -268,7 +532,7 @@ export default function AdminRentals() {
                             </span>
                             {/* Overlapping Warning Badge */}
                             {overlappingRentalIds.has(rental.id) && (
-                                <span className="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-bold bg-orange-600 text-white flex items-center gap-1">
+                                <span className="absolute bottom-2 left-2 px-2 py-1 rounded-full text-xs font-bold bg-orange-600 text-white flex items-center gap-1">
                                     <AlertOctagon className="w-3 h-3" />
                                     Overlap
                                 </span>
@@ -340,7 +604,7 @@ export default function AdminRentals() {
                                             Approve
                                         </button>
                                         <button
-                                            onClick={() => showConfirmation(rental.id, 'REJECTED', rental.user?.name)}
+                                            onClick={() => handleRejectClick(rental)}
                                             className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 shadow-lg"
                                         >
                                             Reject
@@ -564,6 +828,182 @@ export default function AdminRentals() {
                 );
             })()}
 
+            {/* Reject Confirmation Modal */}
+            {showRejectModal && rejectingRental && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fade-in" onClick={() => !rejectLoading && setShowRejectModal(false)} />
+                    <div className="relative backdrop-blur-2xl bg-gradient-to-b from-slate-800/95 to-slate-900/95 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-scale-in border border-white/20">
+                        <div className="p-6 border-b border-white/10">
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                                    <X className="w-6 h-6 text-red-400" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">Reject Request</h3>
+                                    <p className="text-white/50 text-sm">
+                                        From {rejectingRental.userName} for {rejectingRental.equipmentName}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <p className="text-white/70">
+                                Are you sure you want to reject this rental request?
+                            </p>
+
+                            <div>
+                                <label className="block text-sm font-medium text-white/70 mb-2">
+                                    Note to user <span className="text-white/40">(optional)</span>
+                                </label>
+                                <textarea
+                                    value={rejectNote}
+                                    onChange={(e) => setRejectNote(e.target.value)}
+                                    placeholder="e.g., Equipment is unavailable during this period..."
+                                    rows={3}
+                                    className="w-full bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all duration-200 resize-none"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="p-6 border-t border-white/10 flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowRejectModal(false);
+                                    setRejectingRental(null);
+                                    setRejectNote('');
+                                }}
+                                disabled={rejectLoading}
+                                className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/20 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmReject}
+                                disabled={rejectLoading}
+                                className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                                {rejectLoading ? (
+                                    <>
+                                        <Loader className="w-4 h-4 animate-spin" />
+                                        Rejecting...
+                                    </>
+                                ) : 'Reject Request'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Batch Action Modal */}
+            {showBatchModal && batchAction && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fade-in" onClick={() => !batchProcessing && setShowBatchModal(false)} />
+                    <div className="relative backdrop-blur-2xl bg-gradient-to-b from-slate-800/95 to-slate-900/95 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-scale-in border border-white/20">
+                        <div className="p-6 border-b border-white/10">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${batchAction === 'APPROVED' ? 'bg-green-500/20' :
+                                    batchAction === 'CHECKED_OUT' ? 'bg-blue-500/20' : 'bg-gray-500/20'
+                                    }`}>
+                                    {batchAction === 'APPROVED' ? <CheckCircle className="w-6 h-6 text-green-400" /> :
+                                        batchAction === 'CHECKED_OUT' ? <Package className="w-6 h-6 text-blue-400" /> :
+                                            <Package className="w-6 h-6 text-gray-400" />}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">
+                                        Batch {batchAction === 'APPROVED' ? 'Approve' :
+                                            batchAction === 'CHECKED_OUT' ? 'Checkout' : 'Return'}
+                                    </h3>
+                                    <p className="text-white/50 text-sm">
+                                        {batchProcessing ? `Processing ${batchProgress.current}/${batchProgress.total}...` :
+                                            `${selectedIds.size} rental(s) will be processed`}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            {batchProcessing ? (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <Loader className="w-5 h-5 text-blue-400 animate-spin" />
+                                        <span className="text-white">Processing rentals...</span>
+                                    </div>
+                                    <div className="w-full bg-white/10 rounded-full h-2">
+                                        <div
+                                            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                            style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            ) : batchProgress.errors.length > 0 ? (
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2 text-red-400">
+                                        <AlertTriangle className="w-5 h-5" />
+                                        <span className="font-medium">Some items failed:</span>
+                                    </div>
+                                    <div className="max-h-40 overflow-y-auto space-y-1">
+                                        {batchProgress.errors.map((err, i) => (
+                                            <p key={i} className="text-sm text-red-300/80 bg-red-500/10 rounded-lg px-3 py-2">
+                                                {err}
+                                            </p>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    <p className="text-white/70">
+                                        Are you sure you want to <span className="font-semibold text-white">
+                                            {batchAction === 'APPROVED' ? 'approve' :
+                                                batchAction === 'CHECKED_OUT' ? 'checkout' : 'return'}
+                                        </span> the following rentals?
+                                    </p>
+                                    <div className="max-h-40 overflow-y-auto space-y-2">
+                                        {Array.from(selectedIds).map(id => {
+                                            const rental = rentals.find(r => r.id === id);
+                                            if (!rental) return null;
+                                            return (
+                                                <div key={id} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 text-sm">
+                                                    <span className="text-white font-medium">{rental.user?.name || 'Unknown'}</span>
+                                                    <span className="text-white/40">-</span>
+                                                    <span className="text-white/60">{rental.equipment?.name}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="p-6 border-t border-white/10 flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowBatchModal(false);
+                                    setBatchProgress({ current: 0, total: 0, errors: [] });
+                                }}
+                                disabled={batchProcessing}
+                                className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/20 disabled:opacity-50"
+                            >
+                                {batchProgress.errors.length > 0 ? 'Close' : 'Cancel'}
+                            </button>
+                            {batchProgress.errors.length === 0 && (
+                                <button
+                                    onClick={handleBatchAction}
+                                    disabled={batchProcessing}
+                                    className={`flex-1 px-4 py-3 rounded-xl font-bold text-white transition-all duration-200 shadow-lg disabled:opacity-50 ${batchAction === 'APPROVED' ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700' :
+                                        batchAction === 'CHECKED_OUT' ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700' :
+                                            'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700'
+                                        }`}
+                                >
+                                    {batchProcessing ? 'Processing...' : 'Confirm'}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )
+            }
+
             <style>{`
                 @keyframes fade-in {
                     from { opacity: 0; }
@@ -579,6 +1019,13 @@ export default function AdminRentals() {
                 .animate-scale-in {
                     animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
+                @keyframes slide-up {
+                    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+                    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+                }
+                .animate-slide-up {
+                    animation: slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
                 .line-clamp-2 {
                     display: -webkit-box;
                     -webkit-line-clamp: 2;
@@ -586,6 +1033,6 @@ export default function AdminRentals() {
                     overflow: hidden;
                 }
             `}</style>
-        </div>
+        </div >
     );
 }

@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import apiClient from '../api/client';
 import type { Equipment } from '../types';
 import { UserRole, EquipmentItemStatus } from '../types';
-import { Search, Filter, Package } from 'lucide-react';
+import { Search, Package, Tag } from 'lucide-react';
+import { mergeWithEquipmentCategories } from '../components/CategoryManager';
 
 export default function EquipmentList() {
     const [equipments, setEquipments] = useState<Equipment[]>([]);
@@ -11,8 +12,11 @@ export default function EquipmentList() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
-    const [filterCategory, setFilterCategory] = useState('');
+    const [filterCategories, setFilterCategories] = useState<string[]>([]);
     const [searchName, setSearchName] = useState('');
+    const [categories, setCategories] = useState<string[]>([]);
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+    const [showAvailabilityDropdown, setShowAvailabilityDropdown] = useState(false);
 
     // Check if user is admin
     const userStr = localStorage.getItem('user');
@@ -30,6 +34,11 @@ export default function EquipmentList() {
             const equipmentsToShow = isAdmin ? allEquipments : allEquipments.filter(item => item.status === 'AVAILABLE');
             setEquipments(equipmentsToShow);
             setFilteredEquipments(equipmentsToShow);
+
+            // Extract categories from all equipment (including unavailable for consistent category list)
+            const equipmentCategories = [...new Set(response.data.map(e => e.category).filter(Boolean))];
+            const mergedCategories = mergeWithEquipmentCategories(equipmentCategories);
+            setCategories(mergedCategories);
         } catch (err) {
             setError('Failed to load equipments');
         } finally {
@@ -50,14 +59,14 @@ export default function EquipmentList() {
                 }
             }
         }
-        if (filterCategory) {
-            filtered = filtered.filter(item => item.category.toLowerCase().includes(filterCategory.toLowerCase()));
+        if (filterCategories.length > 0) {
+            filtered = filtered.filter(item => filterCategories.includes(item.category));
         }
         if (searchName) {
             filtered = filtered.filter(item => item.name.toLowerCase().includes(searchName.toLowerCase()));
         }
         setFilteredEquipments(filtered);
-    }, [equipments, filterStatus, filterCategory, searchName, isAdmin]);
+    }, [equipments, filterStatus, filterCategories, searchName, isAdmin]);
 
     const getAvailableCount = (equipment: Equipment) => {
         if (!equipment.items) return equipment.stockQty;
@@ -102,7 +111,7 @@ export default function EquipmentList() {
 
             {/* Filters */}
             {!loading && equipments.length > 0 && (
-                <div className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl border border-white/20 shadow-xl p-4 md:p-6 mb-8 transition-all duration-300">
+                <div className="relative z-20 backdrop-blur-2xl bg-slate-900/60 rounded-2xl border border-white/20 shadow-xl p-4 md:p-6 mb-8 transition-all duration-300">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="group">
                             <label className="block text-sm font-semibold text-white mb-2 transition-colors group-focus-within:text-blue-400">
@@ -118,44 +127,116 @@ export default function EquipmentList() {
                         </div>
                         <div className="group">
                             <label className="block text-sm font-semibold text-white mb-2 transition-colors group-focus-within:text-blue-400">
-                                <Filter className="inline w-4 h-4 mr-1" /> Filter by Category
+                                <Tag className="inline w-4 h-4 mr-1" /> Filter by Category
                             </label>
-                            <input
-                                type="text"
-                                value={filterCategory}
-                                onChange={(e) => setFilterCategory(e.target.value)}
-                                placeholder="Filter by category..."
-                                className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
-                            />
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                                    className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-left text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 cursor-pointer flex items-center justify-between"
+                                >
+                                    <span className={filterCategories.length > 0 ? 'text-white' : 'text-white/40'}>
+                                        {filterCategories.length > 0 ? `${filterCategories.length} selected` : 'All Categories'}
+                                    </span>
+                                    <svg className={`w-4 h-4 text-white/60 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                {showCategoryDropdown && (
+                                    <div className="absolute z-[100] w-full mt-2 backdrop-blur-2xl bg-slate-800/95 border border-white/20 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+                                        {categories.length === 0 ? (
+                                            <div className="p-4 text-center text-white/50 text-sm">No categories available</div>
+                                        ) : (
+                                            <>
+                                                {filterCategories.length > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFilterCategories([])}
+                                                        className="w-full p-3 text-left text-sm text-blue-400 hover:bg-white/10 border-b border-white/10"
+                                                    >
+                                                        Clear all
+                                                    </button>
+                                                )}
+                                                {categories.map(cat => (
+                                                    <label key={cat} className="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={filterCategories.includes(cat)}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) {
+                                                                    setFilterCategories([...filterCategories, cat]);
+                                                                } else {
+                                                                    setFilterCategories(filterCategories.filter(c => c !== cat));
+                                                                }
+                                                            }}
+                                                            className="w-4 h-4 rounded border-white/30 bg-slate-700 text-blue-500 focus:ring-blue-500/50"
+                                                        />
+                                                        <span className="text-white text-sm">{cat}</span>
+                                                    </label>
+                                                ))}
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="group">
                             <label className="block text-sm font-semibold text-white mb-2">Filter by Availability</label>
                             <div className="relative">
-                                <select
-                                    value={filterStatus}
-                                    onChange={(e) => setFilterStatus(e.target.value)}
-                                    className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-2xl py-3 px-4 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 cursor-pointer appearance-none hover:border-white/30 hover:bg-slate-700/60"
-                                    style={{ colorScheme: 'dark' }}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAvailabilityDropdown(!showAvailabilityDropdown)}
+                                    className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-left text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 cursor-pointer flex items-center justify-between"
                                 >
-                                    <option value="" className="bg-slate-800 rounded-lg">All Equipment</option>
-                                    {isAdmin ? (
-                                        <>
-                                            <option value="AVAILABLE" className="bg-slate-800">✓ AVAILABLE</option>
-                                            <option value="MAINTENANCE" className="bg-slate-800">⚙ MAINTENANCE</option>
-                                            <option value="UNAVAILABLE" className="bg-slate-800">✗ UNAVAILABLE</option>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <option value="HAS_AVAILABLE" className="bg-slate-800">✓ Has Available Items</option>
-                                            <option value="NO_AVAILABLE" className="bg-slate-800">✗ No Available Items</option>
-                                        </>
-                                    )}
-                                </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <span className={filterStatus ? 'text-white' : 'text-white/40'}>
+                                        {filterStatus ? (
+                                            isAdmin ?
+                                                (filterStatus === 'AVAILABLE' ? '✓ Available' : filterStatus === 'MAINTENANCE' ? '⚙ Maintenance' : '✗ Unavailable') :
+                                                (filterStatus === 'HAS_AVAILABLE' ? '✓ Has Available Items' : '✗ No Available Items')
+                                        ) : 'All Equipment'}
+                                    </span>
+                                    <svg className={`w-4 h-4 text-white/60 transition-transform ${showAvailabilityDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                     </svg>
-                                </div>
+                                </button>
+                                {showAvailabilityDropdown && (
+                                    <div className="absolute z-[100] w-full mt-2 backdrop-blur-2xl bg-slate-800/95 border border-white/20 rounded-xl shadow-2xl overflow-hidden">
+                                        <button
+                                            type="button"
+                                            onClick={() => { setFilterStatus(''); setShowAvailabilityDropdown(false); }}
+                                            className={`w-full p-3 text-left text-sm hover:bg-white/10 ${!filterStatus ? 'bg-blue-500/20 text-white' : 'text-white/70'}`}
+                                        >
+                                            All Equipment
+                                        </button>
+                                        {isAdmin ? (
+                                            <>
+                                                {[{ value: 'AVAILABLE', label: '✓ Available' }, { value: 'MAINTENANCE', label: '⚙ Maintenance' }, { value: 'UNAVAILABLE', label: '✗ Unavailable' }].map(opt => (
+                                                    <button
+                                                        key={opt.value}
+                                                        type="button"
+                                                        onClick={() => { setFilterStatus(opt.value); setShowAvailabilityDropdown(false); }}
+                                                        className={`w-full p-3 text-left text-sm hover:bg-white/10 ${filterStatus === opt.value ? 'bg-blue-500/20 text-white' : 'text-white/70'}`}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                ))}
+                                            </>
+                                        ) : (
+                                            <>
+                                                {[{ value: 'HAS_AVAILABLE', label: '✓ Has Available Items' }, { value: 'NO_AVAILABLE', label: '✗ No Available Items' }].map(opt => (
+                                                    <button
+                                                        key={opt.value}
+                                                        type="button"
+                                                        onClick={() => { setFilterStatus(opt.value); setShowAvailabilityDropdown(false); }}
+                                                        className={`w-full p-3 text-left text-sm hover:bg-white/10 ${filterStatus === opt.value ? 'bg-blue-500/20 text-white' : 'text-white/70'}`}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                ))}
+                                            </>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

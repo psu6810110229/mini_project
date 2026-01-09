@@ -4,10 +4,12 @@
   "scripts": {
     "start": "nest start",
     "start:dev": "nest start --watch",
+    "run:dev": "nest start --watch",
     "build": "nest build",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "format": "prettier --write \"src/**/*.ts\"",
     "seed": "nest build && node dist/database/seeds/seed.js",
+    "reset:seed": "nest build && node dist/database/seeds/reset-seed.js",
     "prepare": "cd .. && husky install backend/.husky"
   },
   "dependencies": {

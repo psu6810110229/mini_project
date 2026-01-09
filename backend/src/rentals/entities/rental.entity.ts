@@ -56,6 +56,9 @@ export class Rental {
     @Column({ nullable: true })
     attachmentUrl: string;
 
+    @Column({ type: 'text', nullable: true })
+    rejectReason: string;
+
     @CreateDateColumn()
     createdAt: Date;
 }

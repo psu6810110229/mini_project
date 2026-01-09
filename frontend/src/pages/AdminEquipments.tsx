@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import apiClient from '../api/client';
 import type { Equipment, EquipmentItem } from '../types';
 import { EquipmentItemStatus } from '../types';
-import { AlertCircle, CheckCircle, Trash2, Edit2, Plus, ChevronDown, ChevronUp, Settings, X, Upload, Package, AlertTriangle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Trash2, Edit2, Plus, ChevronDown, Settings, X, Upload, Package, AlertTriangle, Tag } from 'lucide-react';
+import CategoryManager, { mergeWithEquipmentCategories } from '../components/CategoryManager';
 
 export default function AdminEquipments() {
     const [equipments, setEquipments] = useState<Equipment[]>([]);
@@ -14,9 +15,15 @@ export default function AdminEquipments() {
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
-    const [filterCategory, setFilterCategory] = useState('');
+    const [filterCategories, setFilterCategories] = useState<string[]>([]);
     const [searchName, setSearchName] = useState('');
     const [expandedEquipment, setExpandedEquipment] = useState<string | null>(null);
+
+    // Category management state
+    const [categories, setCategories] = useState<string[]>([]);
+    const [showCategoryManager, setShowCategoryManager] = useState(false);
+    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+    const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
     // Confirmation modal state
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -47,6 +54,11 @@ export default function AdminEquipments() {
             setEquipments(response.data);
             setFilteredEquipments(response.data);
             setErrorMessage('');
+
+            // Extract and merge categories from equipment
+            const equipmentCategories = [...new Set(response.data.map(e => e.category).filter(Boolean))];
+            const mergedCategories = mergeWithEquipmentCategories(equipmentCategories);
+            setCategories(mergedCategories);
         } catch (err: any) {
             console.error('Failed to load equipments', err);
             setErrorMessage('Failed to load equipments. Please try again.');
@@ -64,14 +76,14 @@ export default function AdminEquipments() {
                 return false;
             });
         }
-        if (filterCategory) {
-            filtered = filtered.filter(item => item.category.toLowerCase().includes(filterCategory.toLowerCase()));
+        if (filterCategories.length > 0) {
+            filtered = filtered.filter(item => filterCategories.includes(item.category));
         }
         if (searchName) {
             filtered = filtered.filter(item => item.name.toLowerCase().includes(searchName.toLowerCase()));
         }
         setFilteredEquipments(filtered);
-    }, [equipments, filterStatus, filterCategory, searchName]);
+    }, [equipments, filterStatus, filterCategories, searchName]);
 
     // Confirmation handlers
     const showConfirmation = (type: string, id?: string, name?: string) => {
@@ -193,12 +205,6 @@ export default function AdminEquipments() {
         }
     };
 
-    const handleItemStatusChange = async (itemId: string, newStatus: EquipmentItemStatus, itemCode: string) => {
-        // Show confirmation for status change
-        setConfirmAction({ type: 'statusChange', id: itemId, name: `Item ${itemCode} to ${newStatus}` });
-        setShowConfirmModal(true);
-    };
-
     const executeStatusChange = async (itemId: string, newStatus: EquipmentItemStatus) => {
         try {
             setSaving(true);
@@ -294,7 +300,7 @@ export default function AdminEquipments() {
 
             {/* Filters */}
             {!loading && equipments.length > 0 && (
-                <div className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl border border-white/20 shadow-xl p-4 md:p-6 mb-8 transition-all duration-300">
+                <div className="relative z-20 backdrop-blur-2xl bg-slate-900/60 rounded-2xl border border-white/20 shadow-xl p-4 md:p-6 mb-8 transition-all duration-300">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="group">
                             <label className="block text-sm font-semibold text-white mb-2">Search Name</label>
@@ -308,34 +314,98 @@ export default function AdminEquipments() {
                         </div>
                         <div className="group">
                             <label className="block text-sm font-semibold text-white mb-2">Filter by Category</label>
-                            <input
-                                type="text"
-                                value={filterCategory}
-                                onChange={(e) => setFilterCategory(e.target.value)}
-                                placeholder="Type category..."
-                                className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
-                            />
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                                    className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-left text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 cursor-pointer flex items-center justify-between"
+                                >
+                                    <span className={filterCategories.length > 0 ? 'text-white' : 'text-white/40'}>
+                                        {filterCategories.length > 0 ? `${filterCategories.length} selected` : 'All Categories'}
+                                    </span>
+                                    <svg className={`w-4 h-4 text-white/60 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                {showCategoryDropdown && (
+                                    <div className="absolute z-[100] w-full mt-2 backdrop-blur-2xl bg-slate-800/95 border border-white/20 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+                                        {categories.length === 0 ? (
+                                            <div className="p-4 text-center text-white/50 text-sm">No categories available</div>
+                                        ) : (
+                                            <>
+                                                {filterCategories.length > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFilterCategories([])}
+                                                        className="w-full p-3 text-left text-sm text-blue-400 hover:bg-white/10 border-b border-white/10"
+                                                    >
+                                                        Clear all
+                                                    </button>
+                                                )}
+                                                {categories.map(cat => (
+                                                    <label key={cat} className="flex items-center gap-3 p-3 hover:bg-white/10 cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={filterCategories.includes(cat)}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) {
+                                                                    setFilterCategories([...filterCategories, cat]);
+                                                                } else {
+                                                                    setFilterCategories(filterCategories.filter(c => c !== cat));
+                                                                }
+                                                            }}
+                                                            className="w-4 h-4 rounded border-white/30 bg-slate-700 text-blue-500 focus:ring-blue-500/50"
+                                                        />
+                                                        <span className="text-white text-sm">{cat}</span>
+                                                    </label>
+                                                ))}
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="group">
                             <label className="block text-sm font-semibold text-white mb-2">Filter by Status</label>
                             <div className="relative">
-                                <select
-                                    value={filterStatus}
-                                    onChange={(e) => setFilterStatus(e.target.value)}
-                                    className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 cursor-pointer appearance-none"
-                                    style={{ colorScheme: 'dark' }}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                                    className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-left text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-300 cursor-pointer flex items-center justify-between"
                                 >
-                                    <option value="" className="bg-slate-800">All Statuses</option>
-                                    <option value="AVAILABLE" className="bg-slate-800">✓ Available</option>
-                                    <option value="MAINTENANCE" className="bg-slate-800">⚙ Maintenance</option>
-                                    <option value="UNAVAILABLE" className="bg-slate-800">✗ Unavailable</option>
-                                    <option value="RENTED" className="bg-slate-800">◉ Rented</option>
-                                </select>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <span className={filterStatus ? 'text-white' : 'text-white/40'}>
+                                        {filterStatus ? (filterStatus === 'AVAILABLE' ? '✓ Available' : filterStatus === 'MAINTENANCE' ? '⚙ Maintenance' : filterStatus === 'UNAVAILABLE' ? '✗ Unavailable' : '◉ Rented') : 'All Statuses'}
+                                    </span>
+                                    <svg className={`w-4 h-4 text-white/60 transition-transform ${showStatusDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                     </svg>
-                                </div>
+                                </button>
+                                {showStatusDropdown && (
+                                    <div className="absolute z-[100] w-full mt-2 backdrop-blur-2xl bg-slate-800/95 border border-white/20 rounded-xl shadow-2xl overflow-hidden">
+                                        <button
+                                            type="button"
+                                            onClick={() => { setFilterStatus(''); setShowStatusDropdown(false); }}
+                                            className={`w-full p-3 text-left text-sm hover:bg-white/10 ${!filterStatus ? 'bg-blue-500/20 text-white' : 'text-white/70'}`}
+                                        >
+                                            All Statuses
+                                        </button>
+                                        {[
+                                            { value: 'AVAILABLE', label: '✓ Available' },
+                                            { value: 'MAINTENANCE', label: '⚙ Maintenance' },
+                                            { value: 'UNAVAILABLE', label: '✗ Unavailable' },
+                                            { value: 'RENTED', label: '◉ Rented' },
+                                        ].map(status => (
+                                            <button
+                                                key={status.value}
+                                                type="button"
+                                                onClick={() => { setFilterStatus(status.value); setShowStatusDropdown(false); }}
+                                                className={`w-full p-3 text-left text-sm hover:bg-white/10 ${filterStatus === status.value ? 'bg-blue-500/20 text-white' : 'text-white/70'}`}
+                                            >
+                                                {status.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -538,15 +608,39 @@ export default function AdminEquipments() {
 
                             <div>
                                 <label className="block text-sm text-white mb-2 font-semibold">Category *</label>
-                                <input
-                                    type="text"
-                                    required
-                                    disabled={saving}
-                                    className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 disabled:opacity-50"
-                                    value={formData.category}
-                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                    placeholder="e.g., Camera, Microphone, Tripod"
-                                />
+                                <div className="flex gap-2">
+                                    <div className="relative flex-1">
+                                        <select
+                                            required
+                                            disabled={saving}
+                                            className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 disabled:opacity-50 cursor-pointer appearance-none"
+                                            value={formData.category}
+                                            onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                            style={{ colorScheme: 'dark' }}
+                                        >
+                                            <option value="" className="bg-slate-800">Select category...</option>
+                                            {categories.map(cat => (
+                                                <option key={cat} value={cat} className="bg-slate-800">{cat}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                            <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCategoryManager(true)}
+                                        className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all duration-200 border border-white/20 flex items-center gap-2"
+                                        title="Manage Categories"
+                                    >
+                                        <Tag className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                {categories.length === 0 && (
+                                    <p className="text-amber-400/80 text-xs mt-2">No categories yet. Click the tag icon to add categories.</p>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -695,6 +789,14 @@ export default function AdminEquipments() {
                     </div>
                 </div>
             )}
+
+            {/* Category Manager Modal */}
+            <CategoryManager
+                isOpen={showCategoryManager}
+                onClose={() => setShowCategoryManager(false)}
+                categories={categories}
+                onCategoriesChange={setCategories}
+            />
 
             <style>{`
                 @keyframes fade-in {

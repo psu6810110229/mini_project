@@ -141,17 +141,22 @@ export default function AdminAuditLogs() {
 
         const minutes = Math.floor(diff / 60000);
         const hours = Math.floor(diff / 3600000);
-        const days = Math.floor(diff / 86400000);
 
+        // For recent activity (under 1 hour), show relative time
         if (minutes < 1) return 'Just now';
-        if (minutes < 60) return `${minutes} min ago`;
-        if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-        if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 2) return `${hours}h ago`;
 
+        // For today, show time only
+        const isToday = date.toDateString() === now.toDateString();
+        if (isToday) {
+            return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // For older, show full date and time
         return date.toLocaleDateString('en-US', {
             day: '2-digit',
             month: 'short',
-            year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
         });
@@ -176,12 +181,61 @@ export default function AdminAuditLogs() {
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-6">
                 <Activity className="w-8 h-8 text-white" />
                 <h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>
                     System Audit Logs
                 </h1>
             </div>
+
+            {/* Summary Stats */}
+            {(() => {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+                const todayLogs = logs.filter(l => new Date(l.createdAt) >= today);
+                const rentalLogs = logs.filter(l => l.actionType.includes('RENTAL'));
+                const equipmentLogs = logs.filter(l => l.actionType.includes('EQUIPMENT') || l.actionType.includes('ITEM'));
+                const weekUsers = new Set(logs.filter(l => new Date(l.createdAt) >= weekAgo).map(l => l.userId)).size;
+
+                return (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                        <div className="bg-gradient-to-br from-blue-600/90 to-blue-700/80 rounded-xl p-4 border border-blue-400/30 shadow-lg">
+                            <div className="flex items-center gap-2 text-blue-100 mb-1">
+                                <Calendar className="w-4 h-4" />
+                                <span className="text-sm font-medium">Today</span>
+                            </div>
+                            <p className="text-2xl font-bold text-white">{todayLogs.length}</p>
+                            <p className="text-xs text-blue-200">activities</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-green-600/90 to-green-700/80 rounded-xl p-4 border border-green-400/30 shadow-lg">
+                            <div className="flex items-center gap-2 text-green-100 mb-1">
+                                <FileText className="w-4 h-4" />
+                                <span className="text-sm font-medium">Rentals</span>
+                            </div>
+                            <p className="text-2xl font-bold text-white">{rentalLogs.length}</p>
+                            <p className="text-xs text-green-200">total logs</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-purple-600/90 to-purple-700/80 rounded-xl p-4 border border-purple-400/30 shadow-lg">
+                            <div className="flex items-center gap-2 text-purple-100 mb-1">
+                                <Search className="w-4 h-4" />
+                                <span className="text-sm font-medium">Equipment</span>
+                            </div>
+                            <p className="text-2xl font-bold text-white">{equipmentLogs.length}</p>
+                            <p className="text-xs text-purple-200">total logs</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-amber-600/90 to-amber-700/80 rounded-xl p-4 border border-amber-400/30 shadow-lg">
+                            <div className="flex items-center gap-2 text-amber-100 mb-1">
+                                <User className="w-4 h-4" />
+                                <span className="text-sm font-medium">Active Users</span>
+                            </div>
+                            <p className="text-2xl font-bold text-white">{weekUsers}</p>
+                            <p className="text-xs text-amber-200">this week</p>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* Filters */}
             <div className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl border border-white/20 shadow-xl p-4 md:p-6 mb-8 transition-all duration-300">
@@ -282,43 +336,44 @@ export default function AdminAuditLogs() {
                 Showing {filteredLogs.length} of {logs.length} logs
             </div>
 
-            {/* Logs as Cards */}
-            <div className="space-y-4">
+            {/* Logs as Grid Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredLogs.map((log, index) => {
                     const action = getActionLabel(log.actionType);
                     return (
                         <div
                             key={log.id}
-                            className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl border border-white/20 p-5 shadow-xl transition-all duration-300 hover:bg-slate-800/60 animate-fade-in"
-                            style={{ animationDelay: `${index * 50}ms` }}
+                            className="backdrop-blur-xl bg-slate-900/80 rounded-xl border border-white/10 overflow-hidden shadow-lg transition-all duration-300 hover:bg-slate-800/80 animate-fade-in"
+                            style={{ animationDelay: `${index * 30}ms` }}
                         >
-                            <div className="flex items-start gap-4">
-                                {/* Icon */}
-                                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-2xl">
-                                    {action.icon}
-                                </div>
-
-                                {/* Content */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex flex-wrap items-center gap-3 mb-2">
-                                        <span className={`font-bold ${action.color}`}>
-                                            {action.label}
-                                        </span>
-                                        <span className="text-white/50 text-sm flex items-center gap-1">
-                                            <Calendar className="w-3 h-3" />
-                                            {formatTime(log.createdAt)}
-                                        </span>
-                                    </div>
-
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                                            <User className="w-3 h-3 text-white/60" />
+                            {/* Header - User */}
+                            <div className="px-4 py-3 border-b border-white/10 bg-white/5">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                                            <User className="w-4 h-4 text-blue-400" />
                                         </div>
-                                        <span className="text-white font-medium">{log.username}</span>
+                                        <span className="text-white font-bold text-base">{log.username}</span>
                                     </div>
-
-                                    {formatDetails(log.details)}
+                                    <span className="text-white/50 text-sm">
+                                        {formatTime(log.createdAt)}
+                                    </span>
                                 </div>
+                            </div>
+
+                            {/* Action */}
+                            <div className="px-4 py-3">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl">
+                                        {action.icon}
+                                    </div>
+                                    <span className={`font-bold text-lg ${action.color}`}>
+                                        {action.label}
+                                    </span>
+                                </div>
+
+                                {/* Details */}
+                                <div className="text-sm">{formatDetails(log.details)}</div>
                             </div>
                         </div>
                     );

@@ -261,6 +261,12 @@ export class RentalsService {
         }
 
         rental.status = newStatus;
+
+        // Save reject reason if provided and status is REJECTED
+        if (newStatus === RentalStatus.REJECTED && updateStatusDto.rejectReason) {
+            rental.rejectReason = updateStatusDto.rejectReason;
+        }
+
         const savedRental = await this.rentalRepository.save(rental);
 
         // Log the status change to audit logs
