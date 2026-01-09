@@ -42,7 +42,7 @@ export default function Navbar() {
                                 <span className="text-lg text-white">🎓 University Club Gear</span>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-white/70">{isAdmin ? "Admin Panel" : "Rental System"}</span>
-                                    <span className="px-1.5 py-0.5 bg-white/20 text-white text-[10px] rounded-full font-bold border border-white/30">V.1.1</span>
+                                    <span className="px-1.5 py-0.5 bg-white/20 text-white text-[10px] rounded-full font-bold border border-white/30">V.1.1.1</span>
                                 </div>
                             </Link>
 
@@ -62,7 +62,7 @@ export default function Navbar() {
 
                                     {isAdmin && (
                                         <>
-                                            <span className="text-white/60 text-xs font-bold uppercase tracking-widest">⚙️ Admin:</span>
+                                            <span className="text-white/60 text-xs font-bold uppercase tracking-widest"></span>
                                             <Link to="/equipments" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/equipments')}`}>
                                                 📦 View
                                             </Link>

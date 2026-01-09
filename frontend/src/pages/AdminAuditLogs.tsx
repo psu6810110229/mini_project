@@ -7,7 +7,7 @@ export default function AdminAuditLogs() {
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
-    const [filterActionType, setFilterActionType] = useState('');
+    const [filterActionTypes, setFilterActionTypes] = useState<Set<string>>(new Set());
     const [searchUser, setSearchUser] = useState('');
     const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
@@ -26,12 +26,25 @@ export default function AdminAuditLogs() {
         }
     };
 
+    // Toggle action type filter (multi-select)
+    const toggleActionTypeFilter = (actionType: string) => {
+        setFilterActionTypes(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(actionType)) {
+                newSet.delete(actionType);
+            } else {
+                newSet.add(actionType);
+            }
+            return newSet;
+        });
+    };
+
     useEffect(() => {
         let filtered = [...logs];
 
-        // Filter by action type - match exact action type value
-        if (filterActionType) {
-            filtered = filtered.filter(log => log.actionType === filterActionType);
+        // Filter by action types - match any selected type (if any selected)
+        if (filterActionTypes.size > 0) {
+            filtered = filtered.filter(log => filterActionTypes.has(log.actionType));
         }
 
         // Filter by user
@@ -50,7 +63,7 @@ export default function AdminAuditLogs() {
         });
 
         setFilteredLogs(filtered);
-    }, [logs, filterActionType, searchUser, sortOrder]);
+    }, [logs, filterActionTypes, searchUser, sortOrder]);
 
     // Make action types more readable for non-developers
     const getActionLabel = (actionType: string) => {
@@ -252,69 +265,74 @@ export default function AdminAuditLogs() {
                             className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300"
                         />
                     </div>
-                    <div className="group">
-                        <label className="block text-sm font-semibold text-white mb-2 transition-colors group-focus-within:text-blue-400">
-                            <Filter className="inline w-4 h-4 mr-1" /> Filter by Type
+                    <div className="group md:col-span-2">
+                        <label className="block text-sm font-semibold text-white mb-2 transition-colors">
+                            <Filter className="inline w-4 h-4 mr-1" /> Filter by Type (click to toggle)
                         </label>
-                        <div className="relative">
-                            <select
-                                value={filterActionType}
-                                onChange={(e) => setFilterActionType(e.target.value)}
-                                className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 cursor-pointer appearance-none"
-                                style={{ colorScheme: 'dark' }}
-                            >
-                                <option value="" className="bg-slate-800">All Types</option>
-                                {uniqueActionTypes.map(actionType => {
-                                    const info = getActionLabel(actionType);
-                                    return (
-                                        <option key={actionType} value={actionType} className="bg-slate-800">
-                                            {info.icon} {info.label}
-                                        </option>
-                                    );
-                                })}
-                            </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="group">
-                        <label className="block text-sm font-semibold text-white mb-2">
-                            <ArrowUpDown className="inline w-4 h-4 mr-1" /> Sort Order
-                        </label>
-                        <div className="relative">
-                            <select
-                                value={sortOrder}
-                                onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest')}
-                                className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 cursor-pointer appearance-none"
-                                style={{ colorScheme: 'dark' }}
-                            >
-                                <option value="newest" className="bg-slate-800">Newest First</option>
-                                <option value="oldest" className="bg-slate-800">Oldest First</option>
-                            </select>
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                {sortOrder === 'newest' ? (
-                                    <ArrowDown className="w-4 h-4 text-white/60" />
-                                ) : (
-                                    <ArrowUp className="w-4 h-4 text-white/60" />
-                                )}
-                            </div>
+                        <div className="flex flex-wrap gap-2">
+                            {uniqueActionTypes.map(actionType => {
+                                const info = getActionLabel(actionType);
+                                const isSelected = filterActionTypes.has(actionType);
+                                return (
+                                    <button
+                                        key={actionType}
+                                        onClick={() => toggleActionTypeFilter(actionType)}
+                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${isSelected
+                                            ? 'bg-blue-600 text-white border-blue-400 shadow-lg'
+                                            : 'bg-slate-800/60 text-white/70 border-white/10 hover:bg-slate-700/50 hover:text-white'
+                                            }`}
+                                    >
+                                        <span>{info.icon}</span>
+                                        {info.label}
+                                        {isSelected && (
+                                            <span className="ml-1 text-xs">✓</span>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
 
+                {/* Sort Order Row */}
+                <div className="mt-4 flex items-center gap-4">
+                    <label className="text-sm font-semibold text-white flex items-center gap-2">
+                        <ArrowUpDown className="w-4 h-4" /> Sort:
+                    </label>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setSortOrder('newest')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${sortOrder === 'newest'
+                                ? 'bg-purple-600 text-white border-purple-400 shadow-lg'
+                                : 'bg-slate-800/60 text-white/70 border-white/10 hover:bg-slate-700/50 hover:text-white'
+                                }`}
+                        >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                            Newest First
+                        </button>
+                        <button
+                            onClick={() => setSortOrder('oldest')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 border ${sortOrder === 'oldest'
+                                ? 'bg-purple-600 text-white border-purple-400 shadow-lg'
+                                : 'bg-slate-800/60 text-white/70 border-white/10 hover:bg-slate-700/50 hover:text-white'
+                                }`}
+                        >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                            Oldest First
+                        </button>
+                    </div>
+                </div>
+
                 {/* Active filters summary */}
-                {(filterActionType || searchUser) && (
+                {(filterActionTypes.size > 0 || searchUser) && (
                     <div className="mt-4 pt-4 border-t border-white/10 flex items-center gap-2 flex-wrap">
                         <span className="text-white/50 text-sm">Active filters:</span>
-                        {filterActionType && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/20 text-blue-300 text-xs">
-                                {getActionLabel(filterActionType).icon} {getActionLabel(filterActionType).label}
-                                <button onClick={() => setFilterActionType('')} className="ml-1 hover:text-white">×</button>
+                        {Array.from(filterActionTypes).map(actionType => (
+                            <span key={actionType} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500/20 text-blue-300 text-xs">
+                                {getActionLabel(actionType).icon} {getActionLabel(actionType).label}
+                                <button onClick={() => toggleActionTypeFilter(actionType)} className="ml-1 hover:text-white">×</button>
                             </span>
-                        )}
+                        ))}
                         {searchUser && (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-500/20 text-purple-300 text-xs">
                                 User: {searchUser}
@@ -322,7 +340,7 @@ export default function AdminAuditLogs() {
                             </span>
                         )}
                         <button
-                            onClick={() => { setFilterActionType(''); setSearchUser(''); }}
+                            onClick={() => { setFilterActionTypes(new Set()); setSearchUser(''); }}
                             className="text-xs text-white/50 hover:text-white underline"
                         >
                             Clear all
