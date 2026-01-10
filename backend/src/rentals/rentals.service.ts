@@ -239,15 +239,8 @@ export class RentalsService {
     }
 
     async updateStatus(id: string, updateStatusDto: UpdateRentalStatusDto): Promise<Rental & { autoRejectedRentals?: string[] }> {
-        console.log('--- UPDATE STATUS CALLED ---');
-        console.log('Rental ID:', id);
-        console.log('New Status:', updateStatusDto.status);
-
         const rental = await this.findOne(id);
         const { status: newStatus } = updateStatusDto;
-
-        console.log('Current Rental Status:', rental.status);
-        console.log('Equipment ID:', rental.equipmentId);
 
         this.validateStatusTransition(rental.status, newStatus);
 
@@ -283,10 +276,6 @@ export class RentalsService {
                         equipmentItemId: rental.equipmentItemId,
                     }),
                 );
-            }
-
-            if (autoRejectedRentals.length > 0) {
-                console.log(`Auto-rejected ${autoRejectedRentals.length} overlapping rentals`);
             }
         }
 
@@ -332,6 +321,8 @@ export class RentalsService {
             }
         }
 
+        // Save previous status before updating
+        const previousStatus = rental.status;
         rental.status = newStatus;
 
         // Save reject reason if provided and status is REJECTED
@@ -348,7 +339,7 @@ export class RentalsService {
             `RENTAL_STATUS_${newStatus}`,
             rental.id,
             JSON.stringify({
-                previousStatus: rental.status,
+                previousStatus,
                 newStatus,
                 equipmentId: rental.equipmentId,
                 equipmentItemId: rental.equipmentItemId,
