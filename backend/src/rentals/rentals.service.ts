@@ -51,9 +51,54 @@ export class RentalsService {
             }
         }
 
-        // Check for overlapping rentals (skip if user explicitly allows overlap)
+        // ============================================================
+        // DUPLICATE REQUEST REPLACEMENT LOGIC
+        // If same user has a PENDING request for the same equipment (or item)
+        // with overlapping dates, cancel the old one and replace with new
+        // ============================================================
+        const existingDuplicateQuery = this.rentalRepository
+            .createQueryBuilder('rental')
+            .where('rental.userId = :userId', { userId })
+            .andWhere('rental.equipmentId = :equipmentId', { equipmentId })
+            .andWhere('rental.status = :status', { status: RentalStatus.PENDING })
+            .andWhere('rental.startDate < :endDate', { endDate: end })
+            .andWhere('rental.endDate > :startDate', { startDate: start });
+
+        // If a specific item is requested, also match by item
+        if (equipmentItemId) {
+            existingDuplicateQuery.andWhere('rental.equipmentItemId = :equipmentItemId', { equipmentItemId });
+        }
+
+        const existingDuplicates = await existingDuplicateQuery.getMany();
+
+        // Cancel all existing duplicate PENDING requests from this user
+        if (existingDuplicates.length > 0) {
+            for (const duplicate of existingDuplicates) {
+                duplicate.status = RentalStatus.CANCELLED;
+                await this.rentalRepository.save(duplicate);
+
+                // Log the auto-cancellation
+                await this.auditLogsService.log(
+                    userId,
+                    'User',
+                    'RENTAL_AUTO_CANCELLED',
+                    duplicate.id,
+                    JSON.stringify({
+                        reason: 'Replaced by new request with same/overlapping dates',
+                        equipmentId,
+                        equipmentItemId,
+                        originalDates: { start: duplicate.startDate, end: duplicate.endDate },
+                        newDates: { start, end },
+                    }),
+                );
+            }
+            console.log(`Auto-cancelled ${existingDuplicates.length} duplicate PENDING request(s) from user ${userId}`);
+        }
+        // ============================================================
+
+        // Check for overlapping rentals from OTHER users (skip if user explicitly allows overlap)
         if (!allowOverlap) {
-            const hasOverlap = await this.checkOverlap(equipmentId, start, end, undefined, equipmentItemId);
+            const hasOverlap = await this.checkOverlapExcludingUser(equipmentId, start, end, userId, equipmentItemId);
             if (hasOverlap) {
                 throw new BadRequestException('Equipment is already booked for this period');
             }
@@ -78,10 +123,37 @@ export class RentalsService {
             'User',
             'RENTAL_CREATE',
             savedRental.id,
-            JSON.stringify({ equipmentId, equipmentItemId, startDate, endDate }),
+            JSON.stringify({
+                equipmentId,
+                equipmentItemId,
+                startDate,
+                endDate,
+                replacedPreviousRequests: existingDuplicates.length > 0 ? existingDuplicates.length : undefined,
+            }),
         );
 
         return savedRental;
+    }
+
+    // New helper method: Check overlap excluding requests from the same user
+    async checkOverlapExcludingUser(equipmentId: string, startDate: Date, endDate: Date, excludeUserId: string, equipmentItemId?: string): Promise<boolean> {
+        const queryBuilder = this.rentalRepository
+            .createQueryBuilder('rental')
+            .where('rental.equipmentId = :equipmentId', { equipmentId })
+            .andWhere('rental.userId != :excludeUserId', { excludeUserId })
+            .andWhere('rental.status NOT IN (:...excludedStatuses)', {
+                excludedStatuses: [RentalStatus.RETURNED, RentalStatus.REJECTED, RentalStatus.CANCELLED],
+            })
+            .andWhere('rental.startDate < :endDate', { endDate })
+            .andWhere('rental.endDate > :startDate', { startDate });
+
+        // If checking a specific item, only check overlaps for that item
+        if (equipmentItemId) {
+            queryBuilder.andWhere('rental.equipmentItemId = :equipmentItemId', { equipmentItemId });
+        }
+
+        const count = await queryBuilder.getCount();
+        return count > 0;
     }
 
     async checkOverlap(equipmentId: string, startDate: Date, endDate: Date, excludeRentalId?: string, equipmentItemId?: string): Promise<boolean> {
