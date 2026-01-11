@@ -49,7 +49,9 @@ export function RentalDetailModal({ rental, isOpen, onClose, onApprove, onReject
                                     <div className="text-white font-medium">{new Date(rental.endDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                                 </div>
                             </div>
-                            <div className="mt-2 text-center text-blue-400 font-medium text-sm">📅 Total: {duration} days</div>
+                            <div className="mt-3 pt-3 border-t border-white/10 text-center text-blue-400 font-medium text-sm">
+                                📅 Total: {duration} {duration === 1 ? 'day' : 'days'}
+                            </div>
                         </div>
                         <div className="backdrop-blur-xl bg-amber-900/20 rounded-xl p-4 border border-amber-500/30">
                             <h3 className="text-sm font-semibold text-amber-400 mb-2 flex items-center gap-2"><FileText className="w-4 h-4" /> Request Details</h3>
@@ -159,22 +161,25 @@ export function RejectModal({ isOpen, rental, note, onNoteChange, onConfirm, onC
 // Batch Modal Props
 interface BatchModalProps {
     isOpen: boolean;
-    action: 'APPROVED' | 'CHECKED_OUT' | 'RETURNED' | null;
+    action: 'APPROVED' | 'CHECKED_OUT' | 'RETURNED' | 'REJECTED' | null;
     selectedIds: Set<string>;
     rentals: Rental[];
     processing: boolean;
     progress: { current: number; total: number; errors: string[] };
+    rejectNote?: string;
+    onRejectNoteChange?: (note: string) => void;
     onConfirm: () => void;
     onClose: () => void;
 }
 
-export function BatchActionModal({ isOpen, action, selectedIds, rentals, processing, progress, onConfirm, onClose }: BatchModalProps) {
+export function BatchActionModal({ isOpen, action, selectedIds, rentals, processing, progress, rejectNote, onRejectNoteChange, onConfirm, onClose }: BatchModalProps) {
     if (!isOpen || !action) return null;
 
-    const actionConfig = {
+    const actionConfig: Record<string, { label: string; bgClass: string; iconClass: string; btnClass: string }> = {
         APPROVED: { label: 'Approve', bgClass: 'bg-green-500/20', iconClass: 'text-green-400', btnClass: 'bg-gradient-to-r from-green-500 to-green-600' },
         CHECKED_OUT: { label: 'Checkout', bgClass: 'bg-blue-500/20', iconClass: 'text-blue-400', btnClass: 'bg-gradient-to-r from-blue-500 to-blue-600' },
-        RETURNED: { label: 'Return', bgClass: 'bg-gray-500/20', iconClass: 'text-gray-400', btnClass: 'bg-gradient-to-r from-gray-500 to-gray-600' }
+        RETURNED: { label: 'Return', bgClass: 'bg-gray-500/20', iconClass: 'text-gray-400', btnClass: 'bg-gradient-to-r from-gray-500 to-gray-600' },
+        REJECTED: { label: 'Reject', bgClass: 'bg-red-500/20', iconClass: 'text-red-400', btnClass: 'bg-gradient-to-r from-red-500 to-red-600' }
     };
     const { label, bgClass, iconClass, btnClass } = actionConfig[action];
 
@@ -185,7 +190,7 @@ export function BatchActionModal({ isOpen, action, selectedIds, rentals, process
                 <div className="p-6 border-b border-white/10">
                     <div className="flex items-center gap-3">
                         <div className={`w-12 h-12 rounded-xl ${bgClass} flex items-center justify-center`}>
-                            {action === 'APPROVED' ? <CheckCircle className={`w-6 h-6 ${iconClass}`} /> : <Package className={`w-6 h-6 ${iconClass}`} />}
+                            {action === 'APPROVED' ? <CheckCircle className={`w-6 h-6 ${iconClass}`} /> : action === 'REJECTED' ? <X className={`w-6 h-6 ${iconClass}`} /> : <Package className={`w-6 h-6 ${iconClass}`} />}
                         </div>
                         <div>
                             <h3 className="text-xl font-bold text-white">Batch {label}</h3>
@@ -207,12 +212,19 @@ export function BatchActionModal({ isOpen, action, selectedIds, rentals, process
                     ) : (
                         <div className="space-y-3">
                             <p className="text-white/70">Are you sure you want to <span className="font-semibold text-white">{label.toLowerCase()}</span> the following rentals?</p>
-                            <div className="max-h-40 overflow-y-auto space-y-2">
+                            <div className="max-h-32 overflow-y-auto space-y-2">
                                 {Array.from(selectedIds).map(id => {
                                     const rental = rentals.find(r => r.id === id);
                                     return rental ? <div key={id} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 text-sm"><span className="text-white font-medium">{rental.user?.name}</span><span className="text-white/40">-</span><span className="text-white/60">{rental.equipment?.name}</span></div> : null;
                                 })}
                             </div>
+                            {/* Reject reason input for batch reject */}
+                            {action === 'REJECTED' && onRejectNoteChange && (
+                                <div className="mt-4">
+                                    <label className="block text-sm font-medium text-white/70 mb-2">Reject reason <span className="text-white/40">(optional)</span></label>
+                                    <textarea value={rejectNote || ''} onChange={(e) => onRejectNoteChange(e.target.value)} placeholder="e.g., Equipment not available for this period..." rows={2} className="w-full bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none" />
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -224,3 +236,4 @@ export function BatchActionModal({ isOpen, action, selectedIds, rentals, process
         </div>
     );
 }
+

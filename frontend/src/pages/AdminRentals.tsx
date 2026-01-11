@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
 import type { Rental } from '../types';
-import { ClipboardList, CheckCircle, Package, Filter, AlertOctagon, CheckSquare, Loader, History, Activity, RotateCcw, XCircle, Ban } from 'lucide-react';
+import { ClipboardList, CheckCircle } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import SearchBar from '../components/ui/SearchBar';
 import EmptyState from '../components/ui/EmptyState';
 import RentalCard from '../components/rentals/RentalCard';
+import RentalsFilterBar from '../components/rentals/RentalsFilterBar';
+import BatchActionBar from '../components/rentals/BatchActionBar';
 import { RentalDetailModal, ActionConfirmModal, RejectModal, BatchActionModal } from '../components/rentals/RentalModals';
 
 type StatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'CHECKED_OUT' | 'OVERLAPPING';
@@ -34,9 +35,10 @@ export default function AdminRentals() {
     // Batch action states
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showBatchModal, setShowBatchModal] = useState(false);
-    const [batchAction, setBatchAction] = useState<'APPROVED' | 'CHECKED_OUT' | 'RETURNED' | null>(null);
+    const [batchAction, setBatchAction] = useState<'APPROVED' | 'CHECKED_OUT' | 'RETURNED' | 'REJECTED' | null>(null);
     const [batchProcessing, setBatchProcessing] = useState(false);
     const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, errors: [] as string[] });
+    const [batchRejectNote, setBatchRejectNote] = useState('');
 
     useEffect(() => { fetchRentals(); }, []);
 
@@ -122,15 +124,23 @@ export default function AdminRentals() {
     const toggleSelect = (id: string) => setSelectedIds(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
     const clearSelection = () => setSelectedIds(new Set());
 
-    const openBatchModal = (action: 'APPROVED' | 'CHECKED_OUT' | 'RETURNED') => { setBatchAction(action); setBatchProgress({ current: 0, total: selectedIds.size, errors: [] }); setShowBatchModal(true); };
+    const openBatchModal = (action: 'APPROVED' | 'CHECKED_OUT' | 'RETURNED' | 'REJECTED') => { setBatchAction(action); setBatchProgress({ current: 0, total: selectedIds.size, errors: [] }); setBatchRejectNote(''); setShowBatchModal(true); };
 
     const handleBatchAction = async () => {
         if (!batchAction || selectedIds.size === 0) return;
         setBatchProcessing(true);
         const ids = Array.from(selectedIds), errors: string[] = [];
         for (let i = 0; i < ids.length; i++) {
-            try { await apiClient.patch(`/rentals/${ids[i]}/status`, { status: batchAction }); setBatchProgress(prev => ({ ...prev, current: i + 1 })); }
-            catch (err: any) { errors.push(`${rentals.find(r => r.id === ids[i])?.user?.name || 'Unknown'}: ${err.response?.data?.message || 'Failed'}`); }
+            try {
+                const body: { status: string; rejectReason?: string } = { status: batchAction };
+                if (batchAction === 'REJECTED' && batchRejectNote.trim()) {
+                    body.rejectReason = batchRejectNote.trim();
+                }
+                await apiClient.patch(`/rentals/${ids[i]}/status`, body);
+                setBatchProgress(prev => ({ ...prev, current: i + 1 }));
+            } catch (err: any) {
+                errors.push(`${rentals.find(r => r.id === ids[i])?.user?.name || 'Unknown'}: ${err.response?.data?.message || 'Failed'}`);
+            }
         }
         setBatchProgress(prev => ({ ...prev, errors })); fetchRentals(); clearSelection(); setBatchProcessing(false);
         if (errors.length === 0) { setShowBatchModal(false); setSuccessMessage(`Successfully processed ${ids.length} rentals`); setTimeout(() => setSuccessMessage(''), 3000); }
@@ -145,21 +155,13 @@ export default function AdminRentals() {
     const statusCounts: Record<StatusFilter, number> = { ALL: rentals.filter(r => activeStatuses.includes(r.status)).length, PENDING: rentals.filter(r => r.status === 'PENDING').length, APPROVED: rentals.filter(r => r.status === 'APPROVED').length, CHECKED_OUT: rentals.filter(r => r.status === 'CHECKED_OUT').length, OVERLAPPING: overlappingRentalIds.size };
     const historyStatusCounts: Record<HistoryStatusFilter, number> = { ALL: rentals.filter(r => historyStatuses.includes(r.status)).length, RETURNED: rentals.filter(r => r.status === 'RETURNED').length, REJECTED: rentals.filter(r => r.status === 'REJECTED').length, CANCELLED: rentals.filter(r => r.status === 'CANCELLED').length };
 
-    const filterButtons: { key: StatusFilter; label: string; color: string; icon?: React.ReactNode }[] = [
-        { key: 'ALL', label: 'All', color: 'bg-slate-600' }, { key: 'OVERLAPPING', label: 'Conflicts', color: 'bg-orange-600', icon: <AlertOctagon className="w-4 h-4" /> },
-        { key: 'PENDING', label: 'Pending', color: 'bg-yellow-600', icon: <Loader className="w-4 h-4" /> }, { key: 'APPROVED', label: 'Approved', color: 'bg-green-600', icon: <CheckCircle className="w-4 h-4" /> },
-        { key: 'CHECKED_OUT', label: 'Checked Out', color: 'bg-blue-600', icon: <Package className="w-4 h-4" /> }
-    ];
-    const historyFilterButtons: { key: HistoryStatusFilter; label: string; color: string; icon?: React.ReactNode }[] = [
-        { key: 'ALL', label: 'All', color: 'bg-slate-600' }, { key: 'RETURNED', label: 'Returned', color: 'bg-slate-500', icon: <RotateCcw className="w-4 h-4" /> },
-        { key: 'REJECTED', label: 'Rejected', color: 'bg-rose-600', icon: <XCircle className="w-4 h-4" /> }, { key: 'CANCELLED', label: 'Cancelled', color: 'bg-orange-600', icon: <Ban className="w-4 h-4" /> }
-    ];
-
     // Overlapping pending for confirmation modal
     const currentRental = confirmAction ? rentals.find(r => r.id === confirmAction.id) : null;
     const overlappingPending = confirmAction?.status === 'APPROVED' && currentRental ? rentals.filter(r => r.id !== confirmAction.id && r.status === 'PENDING' && r.equipmentItemId === currentRental.equipmentItemId && isOverlapping(new Date(r.startDate), new Date(r.endDate), new Date(currentRental.startDate), new Date(currentRental.endDate))) : [];
 
     if (loading) return <LoadingSpinner message="Loading rentals..." />;
+
+    const { PENDING, APPROVED, CHECKED_OUT } = getSelectedByStatus();
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -167,40 +169,22 @@ export default function AdminRentals() {
 
             <div className="flex items-center gap-3 mb-6"><ClipboardList className="w-8 h-8 text-white" /><h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>Manage Rentals</h1></div>
 
-            <div className="flex gap-2 mb-6">
-                <button onClick={() => { setActiveTab('active'); setStatusFilter('ALL'); }} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all ${activeTab === 'active' ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50'}`}><Activity className="w-5 h-5" /> Active <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'active' ? 'bg-white/20' : 'bg-white/10'}`}>{statusCounts.ALL}</span></button>
-                <button onClick={() => { setActiveTab('history'); setHistoryStatusFilter('ALL'); }} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all ${activeTab === 'history' ? 'bg-slate-600 text-white shadow-lg' : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50'}`}><History className="w-5 h-5" /> History <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'history' ? 'bg-white/20' : 'bg-white/10'}`}>{historyStatusCounts.ALL}</span></button>
-            </div>
+            <RentalsFilterBar
+                activeTab={activeTab} setActiveTab={setActiveTab}
+                statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+                historyStatusFilter={historyStatusFilter} setHistoryStatusFilter={setHistoryStatusFilter}
+                searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+                statusCounts={statusCounts} historyStatusCounts={historyStatusCounts}
+            />
 
-            <div className="mb-6"><SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search by user name, student ID, or equipment..." /></div>
-
-            <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3"><Filter className="w-5 h-5 text-white/70" /><span className="text-white/70 font-medium">Filter by Status</span></div>
-                <div className="flex flex-wrap gap-2">
-                    {(activeTab === 'active' ? filterButtons : historyFilterButtons).map(({ key, label, color, icon }) => (
-                        <button key={key} onClick={() => activeTab === 'active' ? setStatusFilter(key as StatusFilter) : setHistoryStatusFilter(key as HistoryStatusFilter)}
-                            className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${(activeTab === 'active' ? statusFilter : historyStatusFilter) === key ? `${color} text-white border-white/30 shadow-lg scale-105` : 'bg-slate-800/50 text-white/70 border-white/10 hover:bg-slate-700/50'}`}>
-                            {icon} {label} <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${(activeTab === 'active' ? statusFilter : historyStatusFilter) === key ? 'bg-white/20' : 'bg-white/10'}`}>{activeTab === 'active' ? statusCounts[key as StatusFilter] : historyStatusCounts[key as HistoryStatusFilter]}</span>
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {selectedIds.size > 0 && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-slide-up">
-                    <div className="backdrop-blur-2xl bg-slate-900/95 rounded-2xl border border-white/20 shadow-2xl p-4 flex items-center gap-4">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 rounded-xl border border-blue-500/30"><CheckSquare className="w-5 h-5 text-blue-400" /><span className="text-white font-bold">{selectedIds.size}</span><span className="text-white/70">selected</span></div>
-                        {(() => {
-                            const c = getSelectedByStatus(); return (<>
-                                {c.PENDING > 0 && <button onClick={() => openBatchModal('APPROVED')} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow-lg"><CheckCircle className="w-4 h-4" /> Approve ({c.PENDING})</button>}
-                                {c.APPROVED > 0 && <button onClick={() => openBatchModal('CHECKED_OUT')} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg"><Package className="w-4 h-4" /> Checkout ({c.APPROVED})</button>}
-                                {c.CHECKED_OUT > 0 && <button onClick={() => openBatchModal('RETURNED')} className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-semibold shadow-lg">Return ({c.CHECKED_OUT})</button>}
-                            </>);
-                        })()}
-                        <button onClick={clearSelection} className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-xl">✕</button>
-                    </div>
-                </div>
-            )}
+            <BatchActionBar
+                selectedCount={selectedIds.size}
+                pendingCount={PENDING}
+                approvedCount={APPROVED}
+                checkedOutCount={CHECKED_OUT}
+                onBatchAction={openBatchModal}
+                onClearSelection={clearSelection}
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-24">
                 {filteredRentals.map(rental => (
@@ -215,7 +199,7 @@ export default function AdminRentals() {
             <RentalDetailModal rental={selectedRental} isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} onApprove={(id, name) => showConfirmation(id, 'APPROVED', name)} onReject={(id, name) => showConfirmation(id, 'REJECTED', name)} />
             <ActionConfirmModal isOpen={showConfirmModal} action={confirmAction} overlappingPending={overlappingPending} onConfirm={handleConfirmedAction} onCancel={() => setShowConfirmModal(false)} />
             <RejectModal isOpen={showRejectModal} rental={rejectingRental} note={rejectNote} onNoteChange={setRejectNote} onConfirm={handleConfirmReject} onCancel={() => { setShowRejectModal(false); setRejectingRental(null); setRejectNote(''); }} loading={rejectLoading} />
-            <BatchActionModal isOpen={showBatchModal} action={batchAction} selectedIds={selectedIds} rentals={rentals} processing={batchProcessing} progress={batchProgress} onConfirm={handleBatchAction} onClose={() => { setShowBatchModal(false); setBatchProgress({ current: 0, total: 0, errors: [] }); }} />
+            <BatchActionModal isOpen={showBatchModal} action={batchAction} selectedIds={selectedIds} rentals={rentals} processing={batchProcessing} progress={batchProgress} rejectNote={batchRejectNote} onRejectNoteChange={setBatchRejectNote} onConfirm={handleBatchAction} onClose={() => { setShowBatchModal(false); setBatchProgress({ current: 0, total: 0, errors: [] }); }} />
         </div>
     );
 }

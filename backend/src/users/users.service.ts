@@ -10,10 +10,22 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const { studentId, name, password, role } = createUserDto;
+
+    // Check for existing studentId
+    const existingById = await this.usersRepository.findOne({ where: { studentId } });
+    if (existingById) {
+      throw new ConflictException(`Student ID "${studentId}" already exists`);
+    }
+
+    // Check for existing name
+    const existingByName = await this.usersRepository.findOne({ where: { name } });
+    if (existingByName) {
+      throw new ConflictException(`Username "${name}" already exists`);
+    }
 
     // Hash Password
     const salt = await bcrypt.genSalt();
@@ -31,7 +43,7 @@ export class UsersService {
       return await this.usersRepository.save(user);
     } catch (error) {
       if (error.code === '23505') { // Postgres Unique Violation
-        throw new ConflictException(`Student ID "${studentId}" already exists`);
+        throw new ConflictException(`Student ID or Username already exists`);
       }
       throw new InternalServerErrorException();
     }

@@ -42,7 +42,7 @@ export default function Navbar() {
                                 <span className="text-lg text-white">🎓 University Club Gear</span>
                                 <div className="flex items-center gap-2">
                                     <span className="text-xs text-white/70">{isAdmin ? "Admin Panel" : "Rental System"}</span>
-                                    <span className="px-1.5 py-0.5 bg-white/20 text-white text-[10px] rounded-full font-bold border border-white/30">V.1.2</span>
+                                    <span className="px-1.5 py-0.5 bg-white/20 text-white text-[10px] rounded-full font-bold border border-white/30">V.1.3</span>
                                 </div>
                             </Link>
 
@@ -70,10 +70,10 @@ export default function Navbar() {
                                                 🔧 Manage
                                             </Link>
                                             <Link to="/admin/rentals" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/admin/rentals')}`}>
-                                                📊 Rentals
+                                                📋 Rentals
                                             </Link>
                                             <Link to="/admin/audit-logs" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/admin/audit-logs')}`}>
-                                                📝 Logs
+                                                📊 Dashboard
                                             </Link>
                                         </>
                                     )}
@@ -130,7 +130,7 @@ export default function Navbar() {
                                             📊 Rentals
                                         </Link>
                                         <Link to="/admin/audit-logs" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/admin/audit-logs')}`}>
-                                            📝 Logs
+                                            📊 Dashboard
                                         </Link>
                                     </>
                                 )}

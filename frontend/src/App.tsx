@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 import { UserRole } from './types';
 import EquipmentList from './pages/EquipmentList';
@@ -41,8 +42,8 @@ function App() {
         </Route>
       </Route>
 
-      {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      {/* 404 Page - Shows friendly error instead of redirecting to login */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

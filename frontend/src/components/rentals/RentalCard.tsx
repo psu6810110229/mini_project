@@ -68,7 +68,7 @@ export default function RentalCard({
                         <span className="text-white/60">End:</span>
                         <span className="text-white font-medium">{new Date(rental.endDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                     </div>
-                    <div className="text-center text-xs text-blue-400 font-medium pt-1">📅 {duration} days</div>
+                    <div className="text-center text-xs text-blue-400 font-medium pt-1">📅 {duration} {duration === 1 ? 'day' : 'days'}</div>
                 </div>
 
                 {rental.requestDetails && (

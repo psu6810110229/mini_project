@@ -62,6 +62,12 @@ export interface Rental {
   requestDetails?: string;
   rejectReason?: string;
   user?: User;
+  // Checkout/Return evidence fields (optional uploads by user)
+  checkoutImageUrl?: string;
+  checkoutNote?: string;
+  returnImageUrl?: string;
+  returnNote?: string;
+  cancelReason?: string;
 }
 
 export interface AuthResponse {

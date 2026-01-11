@@ -19,7 +19,6 @@ export default function AdminEquipments() {
     const [editingItem, setEditingItem] = useState<Equipment | null>(null);
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
-    const [filterStatus, setFilterStatus] = useState('');
     const [filterCategories, setFilterCategories] = useState<string[]>([]);
     const [searchName, setSearchName] = useState('');
     const [expandedEquipment, setExpandedEquipment] = useState<string | null>(null);
@@ -45,11 +44,11 @@ export default function AdminEquipments() {
 
     useEffect(() => {
         let filtered = [...equipments];
-        if (filterStatus) filtered = filtered.filter(item => item.status === filterStatus || item.items?.some(i => i.status === filterStatus));
+        // Apply category and search filters
         if (filterCategories.length > 0) filtered = filtered.filter(item => filterCategories.includes(item.category));
         if (searchName) filtered = filtered.filter(item => item.name.toLowerCase().includes(searchName.toLowerCase()));
         setFilteredEquipments(filtered);
-    }, [equipments, filterStatus, filterCategories, searchName]);
+    }, [equipments, filterCategories, searchName]);
 
     const showSuccess = (msg: string) => { setSuccessMessage(msg); setTimeout(() => setSuccessMessage(''), 3000); };
     const showError = (msg: string) => { setErrorMessage(msg); setTimeout(() => setErrorMessage(''), 5000); };
@@ -105,23 +104,13 @@ export default function AdminEquipments() {
 
             {equipments.length > 0 && (
                 <div className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl border border-white/20 shadow-xl p-4 md:p-6 mb-8">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div><label className="block text-sm font-semibold text-white mb-2">Search</label><SearchBar value={searchName} onChange={setSearchName} placeholder="Type equipment name..." /></div>
                         <div>
                             <label className="block text-sm font-semibold text-white mb-2">Category</label>
                             <select value={filterCategories[0] || ''} onChange={e => setFilterCategories(e.target.value ? [e.target.value] : [])} className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" style={{ colorScheme: 'dark' }}>
                                 <option value="">All Categories</option>
                                 {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-white mb-2">Status</label>
-                            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50" style={{ colorScheme: 'dark' }}>
-                                <option value="">All Statuses</option>
-                                <option value="AVAILABLE">✓ Available</option>
-                                <option value="MAINTENANCE">⚙ Maintenance</option>
-                                <option value="UNAVAILABLE">✗ Unavailable</option>
-                                <option value="RENTED">◉ Rented</option>
                             </select>
                         </div>
                     </div>

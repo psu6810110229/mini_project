@@ -115,4 +115,23 @@ export class RentalsController {
     ) {
         return this.rentalsService.updateStatus(id, updateStatusDto);
     }
+
+    // ===== RENTAL IMAGE UPLOAD ENDPOINTS =====
+    // These allow users to upload evidence images for checkout/return
+
+    /**
+     * Upload checkout or return image for a rental
+     * @param imageType - 'checkout' or 'return'
+     */
+    @Patch(':id/upload-image')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Upload checkout/return image for a rental' })
+    async uploadImage(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() body: { imageType: 'checkout' | 'return'; imageUrl: string; note?: string },
+    ) {
+        return this.rentalsService.uploadImage(id, body.imageType, body.imageUrl, body.note);
+    }
 }
+

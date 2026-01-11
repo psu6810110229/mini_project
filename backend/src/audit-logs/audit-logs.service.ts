@@ -54,4 +54,35 @@ export class AuditLogsService {
             order: { createdAt: 'DESC' },
         });
     }
+
+    /**
+     * Delete audit logs older than specified days
+     * @param days Number of days - logs older than this will be deleted
+     * @returns Number of deleted records
+     */
+    async deleteOlderThan(days: number): Promise<number> {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+
+        const result = await this.auditLogRepository
+            .createQueryBuilder()
+            .delete()
+            .where('createdAt < :cutoffDate', { cutoffDate })
+            .execute();
+
+        return result.affected || 0;
+    }
+
+    /**
+     * Delete all audit logs
+     * @returns Number of deleted records
+     */
+    async deleteAll(): Promise<number> {
+        const result = await this.auditLogRepository
+            .createQueryBuilder()
+            .delete()
+            .execute();
+
+        return result.affected || 0;
+    }
 }

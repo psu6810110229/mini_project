@@ -17,7 +17,13 @@ export class AuditLog {
     @Column({ nullable: true })
     rentalId: string;
 
-    @ManyToOne(() => Rental, { nullable: true })
+    /**
+     * Foreign key to the Rental table
+     * onDelete: 'SET NULL' means when a rental is deleted, 
+     * the audit log keeps the record but sets rentalId to null
+     * This prevents FK constraint errors when deleting rentals
+     */
+    @ManyToOne(() => Rental, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'rentalId' })
     rental: Rental;
 

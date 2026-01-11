@@ -59,6 +59,30 @@ export class Rental {
     @Column({ type: 'text', nullable: true })
     rejectReason: string;
 
+    // ===== CHECKOUT/RETURN EVIDENCE (Optional) =====
+    // Users can upload images when picking up or returning equipment
+    // This provides evidence for admin review
+
+    /** URL of the image user uploads when picking up equipment */
+    @Column({ nullable: true })
+    checkoutImageUrl: string;
+
+    /** Optional note from user when checking out */
+    @Column({ type: 'text', nullable: true })
+    checkoutNote: string;
+
+    /** URL of the image user uploads when returning equipment */
+    @Column({ nullable: true })
+    returnImageUrl: string;
+
+    /** Optional note from user when returning */
+    @Column({ type: 'text', nullable: true })
+    returnNote: string;
+
+    /** Message required when user cancels the rental */
+    @Column({ type: 'text', nullable: true })
+    cancelReason: string;
+
     @CreateDateColumn()
     createdAt: Date;
 }
