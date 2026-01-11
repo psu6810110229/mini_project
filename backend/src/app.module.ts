@@ -29,10 +29,10 @@ import { SeedsModule } from './database/seeds/seeds.module';
                 abortEarly: true,
             },
         }),
-        // Rate limiting: 10 requests per 60 seconds per IP
+        // Rate limiting: 100 requests per 60 seconds per IP
         ThrottlerModule.forRoot([{
             ttl: 60000,
-            limit: 10,
+            limit: 100,
         }]),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],

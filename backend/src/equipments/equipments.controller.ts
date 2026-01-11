@@ -13,6 +13,7 @@ import {
     Res,
     BadRequestException,
 } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { EquipmentsService } from './equipments.service';
@@ -53,6 +54,7 @@ export class EquipmentsController {
     // IMPORTANT: This route MUST come BEFORE @Get(':id') to avoid 'images' being treated as an ID
     @Get('images/:filename')
     @Public()
+    @SkipThrottle()
     @ApiOperation({ summary: 'Get equipment image by filename' })
     getImage(@Param('filename') filename: string, @Res() res: Response) {
         const filePath = join(uploadsDir, filename);
