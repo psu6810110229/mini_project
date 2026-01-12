@@ -1,8 +1,28 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { UserRole } from '../types';
 
+/**
+ * =====================================================================
+ * ProtectedRoute.tsx - Route Guard สำหรับป้องกัน Route
+ * =====================================================================
+ * 
+ * หน้าที่: ป้องกันไม่ให้ User เข้าถึงหน้าที่ไม่ได้รับอนุญาต
+ * 
+ * การทำงาน:
+ * 1. เช็คว่า Login แล้วหรือยัง (มี token ใน localStorage?)
+ * 2. ถ้า Login แล้ว → เช็คว่า Role ตรงกับที่กำหนดหรือไม่
+ * 3. ถ้าผ่านทั้งหมด → แสดงหน้าที่ร้องขอ
+ * 4. ถ้าไม่ผ่าน → Redirect ไปหน้าที่เหมาะสม
+ * 
+ * ตัวอย่างการใช้:
+ * <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
+ *   <Route path="/admin/*" element={<AdminDashboard />} />
+ * </Route>
+ * =====================================================================
+ */
+
 interface Props {
-  allowedRoles?: UserRole[];
+  allowedRoles?: UserRole[];  // Role ที่อนุญาตให้เข้า (ถ้าไม่ระบุ = ทุก role)
 }
 
 const ProtectedRoute = ({ allowedRoles }: Props) => {

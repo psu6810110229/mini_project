@@ -1,14 +1,31 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 
-// Cart item interface - represents a reserved equipment item
+/**
+ * =====================================================================
+ * CartContext.tsx - ระบบตะกร้าสินค้าพร้อมหมดอายุอัตโนมัติ
+ * =====================================================================
+ * 
+ * ทำไมต้องมี Context นี้?
+ * - ให้ทุก Component เข้าถึงข้อมูลตะกร้าได้โดยไม่ต้อง pass props หลายชั้น
+ * - เก็บข้อมูลลง localStorage เพื่อไม่หายเมื่อรีเฟรชหน้า
+ * - มีระบบหมดอายุอัตโนมัติ 15 นาที เพื่อป้องกันการกั๊กของ
+ * 
+ * การทำงาน:
+ * 1. เมื่อเพิ่มของลงตะกร้า → บันทึก timestamp + เวลาหมดอายุ
+ * 2. setInterval ทำงานทุก 1 วินาที → ตรวจสอบของหมดอายุ
+ * 3. ถ้าหมดอายุ → ลบออกจากตะกร้าอัตโนมัติ
+ * =====================================================================
+ */
+
+// CartItem interface - ข้อมูลอุปกรณ์ที่เลือกไว้ในตะกร้า
 export interface CartItem {
-    itemId: string;          // The specific equipment item ID
-    itemCode: string;        // Human-readable item code
-    equipmentId: string;     // The equipment type ID
-    equipmentName: string;   // Name of the equipment
-    equipmentImage?: string; // Optional image URL
-    addedAt?: number;        // When it was added
-    expiresAt: number;       // Timestamp when reservation expires
+    itemId: string;          // ID ของอุปกรณ์ชิ้นนั้น (เช่น กล้องตัวที่ 1)
+    itemCode: string;        // รหัสอุปกรณ์ (เช่น "001")
+    equipmentId: string;     // ID ของประเภทอุปกรณ์ (เช่น Canon 5D)
+    equipmentName: string;   // ชื่ออุปกรณ์
+    equipmentImage?: string; // รูปอุปกรณ์ (ถ้ามี)
+    addedAt?: number;        // เวลาที่เพิ่มเข้าตะกร้า (Unix timestamp)
+    expiresAt: number;       // เวลาหมดอายุ (Unix timestamp)
 }
 
 interface CartContextType {
@@ -22,19 +39,19 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_STORAGE_KEY = 'rentalCart';
-const CART_EXPIRY_MINUTES = 15;
+// ===================== CONFIGURATION =====================
+const CART_STORAGE_KEY = 'rentalCart';  // Key สำหรับเก็บใน localStorage
+const CART_EXPIRY_MINUTES = 15;          // หมดอายุหลังจากเพิ่ม 15 นาที
 
 export function CartProvider({ children }: { children: ReactNode }) {
+    // โหลดข้อมูลจาก localStorage ตอนเริ่มต้น และกรองของหมดอายุออก
     const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-        // Load from localStorage on initial render
         const saved = localStorage.getItem(CART_STORAGE_KEY);
         if (saved) {
             try {
                 const parsed = JSON.parse(saved) as CartItem[];
-                // Filter out expired items
                 const now = Date.now();
-                return parsed.filter(item => item.expiresAt > now);
+                return parsed.filter(item => item.expiresAt > now); // กรองของหมดอายุออก
             } catch {
                 return [];
             }
@@ -42,25 +59,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return [];
     });
 
-    // Save to localStorage whenever cart changes
+    // บันทึกลง localStorage ทุกครั้งที่ตะกร้าเปลี่ยน
     useEffect(() => {
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
     }, [cartItems]);
 
-    // Remove expired items periodically
+    // ===================== TIMER LOGIC (สำคัญมาก!) =====================
+    // ระบบตรวจสอบของหมดอายุ - ทำงานทุก 1 วินาที
+    // เหตุผล: ถ้าคนกั๊กของไว้นานเกินไป ของจะถูกปลดปล่อยให้คนอื่นจองได้
     useEffect(() => {
         const interval = setInterval(() => {
             const now = Date.now();
             setCartItems(prev => {
+                // กรองเฉพาะของที่ยังไม่หมดอายุ
                 const filtered = prev.filter(item => item.expiresAt > now);
+                // ถ้าจำนวนเปลี่ยน = มีของหมดอายุ → อัปเดต state
                 if (filtered.length !== prev.length) {
                     return filtered;
                 }
-                return prev;
+                return prev; // ไม่มีการเปลี่ยนแปลง
             });
-        }, 1000);
+        }, 1000); // ทุก 1 วินาที
 
-        return () => clearInterval(interval);
+        return () => clearInterval(interval); // Cleanup เมื่อ unmount
     }, []);
 
     const addToCart = useCallback((item: Omit<CartItem, 'addedAt' | 'expiresAt'>): boolean => {
