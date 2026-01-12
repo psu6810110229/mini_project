@@ -34,7 +34,7 @@ export default function EquipmentRentalActions({
     if (isAdmin) {
         return (
             <div className="backdrop-blur-2xl bg-slate-800/50 p-6 rounded-xl border border-white/20">
-                <p className="text-center text-white/70 font-medium">👨‍💼 Admin mode - Cannot rent equipment</p>
+                <p className="text-center text-white/70 font-medium">👨‍💼 โหมดแอดมิน - ไม่สามารถยืมได้</p>
             </div>
         );
     }
@@ -44,7 +44,7 @@ export default function EquipmentRentalActions({
             {/* Items Available to Add */}
             {availableItemsForCart.length > 0 && (
                 <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-white mb-3">Select items to rent</h3>
+                    <h3 className="text-lg font-semibold text-white mb-3">เลือกรายการที่จะยืม</h3>
                     <div className="grid grid-cols-2 gap-3">
                         {availableItemsForCart.map((item, i) => (
                             <button
@@ -55,7 +55,7 @@ export default function EquipmentRentalActions({
                             >
                                 <div className="text-left">
                                     <span className="font-bold text-white">Item: {item.itemCode}</span>
-                                    <span className="block text-xs text-green-400 font-medium">Available</span>
+                                    <span className="block text-xs text-green-400 font-medium">ว่าง</span>
                                 </div>
                                 <div className="backdrop-blur-xl bg-white/10 group-hover:bg-blue-600 p-2 rounded-lg transition-all group-hover:scale-110">
                                     <Plus className="h-4 w-4 text-white" />
@@ -70,14 +70,14 @@ export default function EquipmentRentalActions({
             {inCartItems.length > 0 && (
                 <div className="mb-6">
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                        <ShoppingBag className="h-5 w-5" /> In your rental list
+                        <ShoppingBag className="h-5 w-5" /> อยู่ในรายการยืมของคุณ
                     </h3>
                     <div className="grid grid-cols-2 gap-3">
                         {inCartItems.map(item => (
                             <div key={item.id} className="flex items-center justify-between backdrop-blur-2xl bg-green-900/30 border border-green-500/30 rounded-xl p-3">
                                 <div className="text-left">
                                     <span className="font-bold text-white">Item: {item.itemCode}</span>
-                                    <span className="block text-xs text-green-300 font-medium">Reserved</span>
+                                    <span className="block text-xs text-green-300 font-medium">จองแล้ว</span>
                                 </div>
                                 <button
                                     onClick={() => { setConfirmAction({ itemId: item.id, itemCode: item.itemCode }); setShowConfirmModal(true); }}
@@ -95,7 +95,7 @@ export default function EquipmentRentalActions({
             {availableItemsForCart.length === 0 && inCartItems.length === 0 && (
                 <div className="backdrop-blur-2xl bg-slate-800/50 p-6 rounded-xl border border-white/20 text-center">
                     <Package className="w-12 h-12 mx-auto mb-3 text-white/40" />
-                    <p className="text-white/70 font-medium">No available items to rent</p>
+                    <p className="text-white/70 font-medium">ไม่มีรายการว่าง</p>
                 </div>
             )}
 
@@ -103,19 +103,19 @@ export default function EquipmentRentalActions({
             {activeRentals.length > 0 && (
                 <div className="mt-6">
                     <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                        <Clock className="h-5 w-5 text-amber-400" /> Currently Rented ({activeRentals.length})
+                        <Clock className="h-5 w-5 text-amber-400" /> กำลังถูกยืม ({activeRentals.length})
                     </h3>
                     <div className="space-y-3">
                         {activeRentals.map(rental => (
                             <div key={rental.id} className="backdrop-blur-2xl bg-amber-900/20 border border-amber-500/30 rounded-xl p-4">
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
-                                        <span className="font-bold text-white">Item: {rental.itemCode}</span>
+                                        <span className="font-bold text-white">Item Code: {rental.itemCode}</span>
                                         <span className="px-2 py-0.5 ml-2 rounded-full text-xs font-medium bg-amber-500/30 text-amber-300">
                                             {rental.status.toLowerCase().replace('_', ' ')}
                                         </span>
                                         <div className="text-sm text-white/70 mt-1">
-                                            Borrowed by: <span className="text-white font-medium">{rental.userName || 'Unknown'}</span>
+                                            ยืมโดย: <span className="text-white font-medium">{rental.userName || 'ไม่ทราบ'}</span>
                                         </div>
                                     </div>
                                     <div className="text-right text-sm">
@@ -123,7 +123,7 @@ export default function EquipmentRentalActions({
                                             <Calendar className="h-3.5 w-3.5" />
                                             {formatDate(rental.startDate)}
                                         </div>
-                                        <div className="text-white/50 text-xs">to {formatDate(rental.endDate)}</div>
+                                        <div className="text-white/50 text-xs">ถึง {formatDate(rental.endDate)}</div>
                                     </div>
                                 </div>
                             </div>
@@ -135,17 +135,17 @@ export default function EquipmentRentalActions({
             {/* Cart Hint */}
             {inCartItems.length > 0 && (
                 <p className="text-sm text-white/60 text-center mt-4 flex items-center justify-center gap-2">
-                    <ShoppingBag className="w-4 h-4" /> Click the rental list button at bottom-right to confirm
+                    <ShoppingBag className="w-4 h-4" /> กดปุ่มรายการยืมด้านล่างขวาเพื่อยืนยัน
                 </p>
             )}
 
             {/* Confirm Remove Modal */}
             <ConfirmModal
                 isOpen={showConfirmModal}
-                title="Remove from list?"
-                message={`Remove ${confirmAction?.itemCode} from your rental list?`}
+                title="นำออกจากรายการ?"
+                message={`นำ ${confirmAction?.itemCode} ออกจากรายการยืมของคุณ?`}
                 variant="warning"
-                confirmLabel="Remove"
+                confirmLabel="นำออก"
                 onConfirm={() => { if (confirmAction) onRemoveFromCart(confirmAction.itemId); setShowConfirmModal(false); setConfirmAction(null); }}
                 onCancel={() => { setShowConfirmModal(false); setConfirmAction(null); }}
             />

@@ -20,30 +20,30 @@ export default function BatchActionBar({
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 rounded-xl border border-blue-500/30">
                     <CheckSquare className="w-5 h-5 text-blue-400" />
                     <span className="text-white font-bold">{selectedCount}</span>
-                    <span className="text-white/70">selected</span>
+                    <span className="text-white/70">รายการที่เลือก</span>
                 </div>
 
                 {pendingCount > 0 && (
                     <button onClick={() => onBatchAction('APPROVED')} className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow-lg">
-                        <CheckCircle className="w-4 h-4" /> Approve ({pendingCount})
+                        <CheckCircle className="w-4 h-4" /> อนุมัติ ({pendingCount})
                     </button>
                 )}
 
                 {pendingCount >= 2 && (
                     <button onClick={() => onBatchAction('REJECTED')} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold shadow-lg">
-                        <XCircle className="w-4 h-4" /> Reject ({pendingCount})
+                        <XCircle className="w-4 h-4" /> ปฏิเสธ ({pendingCount})
                     </button>
                 )}
 
                 {approvedCount > 0 && (
                     <button onClick={() => onBatchAction('CHECKED_OUT')} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-lg">
-                        <Package className="w-4 h-4" /> Checkout ({approvedCount})
+                        <Package className="w-4 h-4" /> ยืนยันรับของ ({approvedCount})
                     </button>
                 )}
 
                 {checkedOutCount > 0 && (
                     <button onClick={() => onBatchAction('RETURNED')} className="flex items-center gap-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-semibold shadow-lg">
-                        Return ({checkedOutCount})
+                        ยืนยันคืนของ ({checkedOutCount})
                     </button>
                 )}
 

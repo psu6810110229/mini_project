@@ -28,12 +28,12 @@
 export const getStatusLabel = (status: string): string => {
     // Object lookup is faster than switch/case or if/else chains
     const labels: Record<string, string> = {
-        PENDING: 'Pending',
-        APPROVED: 'Approved',
-        CHECKED_OUT: 'Checked Out',
-        RETURNED: 'Returned',
-        REJECTED: 'Rejected',
-        CANCELLED: 'Cancelled',
+        PENDING: 'รอดำเนินการ',
+        APPROVED: 'อนุมัติแล้ว',
+        CHECKED_OUT: 'รับของแล้ว',
+        RETURNED: 'คืนแล้ว',
+        REJECTED: 'ปฏิเสธแล้ว',
+        CANCELLED: 'ยกเลิกแล้ว',
     };
     // If status not found in map, return the original status
     return labels[status] || status;
@@ -95,9 +95,9 @@ export const getStatusBorderColor = (status: string): string => {
  */
 export const getActionLabel = (status: string): string => {
     const actions: Record<string, string> = {
-        PENDING: 'Approve',
-        APPROVED: 'Checkout',
-        CHECKED_OUT: 'Return',
+        PENDING: 'อนุมัติ',
+        APPROVED: 'รับอุปกรณ์',
+        CHECKED_OUT: 'คืนอุปกรณ์',
     };
     return actions[status] || '';
 };

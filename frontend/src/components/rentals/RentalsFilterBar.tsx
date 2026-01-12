@@ -39,17 +39,17 @@ export default function RentalsFilterBar({
         <>
             <div className="flex gap-2 mb-6">
                 <button onClick={() => { setActiveTab('active'); setStatusFilter('ALL'); }} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all ${activeTab === 'active' ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50'}`}>
-                    <Activity className="w-5 h-5" /> Active <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'active' ? 'bg-white/20' : 'bg-white/10'}`}>{statusCounts.ALL}</span>
+                    <Activity className="w-5 h-5" /> กำลังดำเนินการ <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'active' ? 'bg-white/20' : 'bg-white/10'}`}>{statusCounts.ALL}</span>
                 </button>
                 <button onClick={() => { setActiveTab('history'); setHistoryStatusFilter('ALL'); }} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all ${activeTab === 'history' ? 'bg-slate-600 text-white shadow-lg' : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50'}`}>
-                    <History className="w-5 h-5" /> History <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'history' ? 'bg-white/20' : 'bg-white/10'}`}>{historyStatusCounts.ALL}</span>
+                    <History className="w-5 h-5" /> ประวัติ <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'history' ? 'bg-white/20' : 'bg-white/10'}`}>{historyStatusCounts.ALL}</span>
                 </button>
             </div>
 
-            <div className="mb-6"><SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search by user name, student ID, or equipment..." /></div>
+            <div className="mb-6"><SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="ค้นหาชื่อผู้ใช้, รหัสนักศึกษา, หรืออุปกรณ์..." /></div>
 
             <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3"><Filter className="w-5 h-5 text-white/70" /><span className="text-white/70 font-medium">Filter by Status</span></div>
+                <div className="flex items-center gap-2 mb-3"><Filter className="w-5 h-5 text-white/70" /><span className="text-white/70 font-medium">กรองตามสถานะ</span></div>
                 <div className="flex flex-wrap gap-2">
                     {(activeTab === 'active' ? filterButtons : historyFilterButtons).map(({ key, label, color, icon }) => (
                         <button key={key} onClick={() => activeTab === 'active' ? setStatusFilter(key as StatusFilter) : setHistoryStatusFilter(key as HistoryStatusFilter)}

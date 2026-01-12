@@ -52,7 +52,7 @@ export default function EquipmentDetail() {
                 setEquipment(equipmentRes.data);
                 setActiveRentals(rentalsRes.data);
             } catch (err) {
-                setError('Failed to load equipment details');
+                setError('โหลดรายละเอียดไม่สำเร็จ');
             } finally {
                 setLoading(false);
             }
@@ -61,7 +61,7 @@ export default function EquipmentDetail() {
     }, [id]);
 
     // ===== HELPER FUNCTIONS =====
-    const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('th-TH-u-ca-buddhist', { month: 'short', day: 'numeric', year: 'numeric' });
 
     const handleAddToCart = (item: EquipmentItem) => {
         if (!equipment) return;
@@ -73,7 +73,7 @@ export default function EquipmentDetail() {
             itemCode: item.itemCode,
         });
         if (success) {
-            setAddedMessage(`Added ${item.itemCode} to list!`);
+            setAddedMessage(`เพิ่ม ${item.itemCode} แล้ว!`);
             setTimeout(() => setAddedMessage(''), 2000);
         }
     };
@@ -84,11 +84,11 @@ export default function EquipmentDetail() {
     const inCartItems = equipment?.items?.filter(item => isInCart(item.id)) || [];
 
     // ===== CONDITIONAL RENDERING =====
-    if (loading) return <LoadingSpinner message="Loading equipment..." />;
+    if (loading) return <LoadingSpinner message="กำลังโหลด..." />;
     if (error || !equipment) return (
         <div className="min-h-[80vh] flex items-center justify-center">
             <div className="backdrop-blur-2xl bg-red-900/50 rounded-2xl p-8 border border-red-500/30">
-                <p className="text-red-200">{error || 'Equipment not found'}</p>
+                <p className="text-red-200">{error || 'ไม่พบอุปกรณ์นี้'}</p>
             </div>
         </div>
     );
@@ -97,7 +97,7 @@ export default function EquipmentDetail() {
         <div className="p-4 md:p-8 max-w-4xl mx-auto">
             {/* Back Button */}
             <button onClick={() => navigate('/equipments')} className="mb-8 text-white hover:text-white/80 flex items-center gap-2 font-semibold group" style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}>
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-2 transition-transform" />Back to list
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-2 transition-transform" /> กลับ
             </button>
 
             {/* Main Card */}
@@ -110,20 +110,20 @@ export default function EquipmentDetail() {
                     {/* Right: Details & Actions */}
                     <div className="p-6 md:p-8">
                         {/* Header Info */}
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{equipment.name}</h1>
+                        <div className="mb-4">
+                            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{equipment.name}</h1>
+                            <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-white/70 bg-white/10 px-3 py-1 rounded-full text-sm font-medium border border-white/20">{equipment.category}</span>
+                                <span className={`px-3 py-1 rounded-full text-sm font-bold ${equipment.status === 'AVAILABLE' && actualAvailableItems.length > 0 ? 'bg-green-600' : 'bg-red-600'} text-white`}>
+                                    {equipment.status === 'AVAILABLE' && actualAvailableItems.length > 0 ? 'ว่างอยู่' : 'ไม่ว่าง'}
+                                </span>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-sm font-bold ${actualAvailableItems.length > 0 ? 'bg-green-600' : 'bg-red-600'} text-white`}>
-                                {actualAvailableItems.length > 0 ? 'Available' : 'Unavailable'}
-                            </span>
                         </div>
 
                         {/* Availability Count */}
                         <div className="flex justify-between py-3 border-b border-white/20 mb-6">
-                            <span className="text-white/70">Available</span>
-                            <span className="text-white font-semibold">{actualAvailableItems.length}/{equipment.items?.length || equipment.stockQty}</span>
+                            <span className="text-white/70">พร้อมใช้</span>
+                            <span className="text-white font-semibold">{equipment.status === 'AVAILABLE' ? actualAvailableItems.length : 0}/{equipment.items?.length || equipment.stockQty}</span>
                         </div>
 
                         {/* Rental Actions (Selection, Lists, Admin msg) */}

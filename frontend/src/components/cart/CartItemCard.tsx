@@ -28,7 +28,7 @@ export default function CartItemCard({ item, onRemove, formatTimeRemaining }: Ca
                 </div>
                 <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-white truncate">{item.equipmentName}</h4>
-                    <p className="text-sm text-white/50">ID: {item.itemCode}</p>
+                    <p className="text-sm text-white/50">Item Code: {item.itemCode}</p>
                     <div className="flex items-center gap-2 mt-2">
                         <Clock className="h-3 w-3 text-amber-400" />
                         <span className="text-xs font-mono text-amber-400">{formatTimeRemaining(item.expiresAt)}</span>

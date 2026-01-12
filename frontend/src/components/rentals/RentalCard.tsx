@@ -41,14 +41,14 @@ export default function RentalCard({
                 </span>
                 {isOverlapping && (
                     <span className="absolute bottom-2 left-2 px-2 py-1 rounded-full text-xs font-bold bg-orange-600 text-white flex items-center gap-1">
-                        <AlertOctagon className="w-3 h-3" /> Overlap
+                        <AlertOctagon className="w-3 h-3" /> ซ้อนกัน
                     </span>
                 )}
             </div>
 
             <div className="p-4">
                 <div className="mb-3">
-                    <div className="font-bold text-white text-lg">{rental.user?.name || 'Unknown'}</div>
+                    <div className="font-bold text-white text-lg">{rental.user?.name || 'ไม่ทราบ'}</div>
                     <div className="text-xs text-white/60">{rental.user?.studentId}</div>
                 </div>
 
@@ -61,20 +61,20 @@ export default function RentalCard({
 
                 <div className="text-sm space-y-1 mb-3">
                     <div className="flex justify-between">
-                        <span className="text-white/60">Start:</span>
-                        <span className="text-white font-medium">{new Date(rental.startDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                        <span className="text-white/60">เริ่ม:</span>
+                        <span className="text-white font-medium">{new Date(rental.startDate).toLocaleDateString('th-TH-u-ca-buddhist', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span className="text-white/60">End:</span>
-                        <span className="text-white font-medium">{new Date(rental.endDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                        <span className="text-white/60">สิ้นสุด:</span>
+                        <span className="text-white font-medium">{new Date(rental.endDate).toLocaleDateString('th-TH-u-ca-buddhist', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                     </div>
-                    <div className="text-center text-xs text-blue-400 font-medium pt-1">📅 {duration} {duration === 1 ? 'day' : 'days'}</div>
+                    <div className="text-center text-xs text-blue-400 font-medium pt-1">📅 {duration} วัน</div>
                 </div>
 
                 {rental.requestDetails && (
                     <div className="mb-3 p-2 bg-amber-900/20 border border-amber-500/30 rounded-lg">
                         <div className="flex items-center gap-1 text-amber-400 text-xs font-medium mb-1">
-                            <FileText className="w-3 h-3" /> Request Note
+                            <FileText className="w-3 h-3" /> หมายเหตุ
                         </div>
                         <p className="text-white/70 text-xs line-clamp-2">{rental.requestDetails}</p>
                     </div>
@@ -83,19 +83,19 @@ export default function RentalCard({
                 <div className="flex gap-2 mt-4">
                     <button onClick={() => onViewDetails(rental)}
                         className="flex-1 flex items-center justify-center gap-1 bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-xl text-sm font-medium transition-all border border-white/20">
-                        <Eye className="w-4 h-4" /> Details
+                        <Eye className="w-4 h-4" /> รายละเอียด
                     </button>
                     {rental.status === 'PENDING' && (
                         <>
-                            <button onClick={() => onApprove(rental.id, rental.user?.name || '')} className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-lg">Approve</button>
-                            <button onClick={() => onReject(rental)} className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-lg">Reject</button>
+                            <button onClick={() => onApprove(rental.id, rental.user?.name || '')} className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-lg">อนุมัติ</button>
+                            <button onClick={() => onReject(rental)} className="flex-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-lg">ปฏิเสธ</button>
                         </>
                     )}
                     {rental.status === 'APPROVED' && (
-                        <button onClick={() => onCheckout(rental.id, rental.user?.name || '')} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-lg">Checkout</button>
+                        <button onClick={() => onCheckout(rental.id, rental.user?.name || '')} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-lg">รับอุปกรณ์</button>
                     )}
                     {rental.status === 'CHECKED_OUT' && (
-                        <button onClick={() => onReturn(rental.id, rental.user?.name || '')} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-lg">Return</button>
+                        <button onClick={() => onReturn(rental.id, rental.user?.name || '')} className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-xl text-sm font-semibold shadow-lg">คืนอุปกรณ์</button>
                     )}
                 </div>
             </div>

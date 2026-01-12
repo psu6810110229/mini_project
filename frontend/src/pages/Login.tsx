@@ -32,7 +32,7 @@ const Login = () => {
         navigate('/equipments');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || 'เข้าสู่ระบบไม่สำเร็จ');
     } finally {
       setLoading(false);
     }
@@ -68,10 +68,10 @@ const Login = () => {
 
           {/* Title */}
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-2 text-white tracking-tight">
-            Welcome back!
+            ยินดีต้อนรับกลับ!
           </h2>
           <p className="text-center text-white/70 mb-8 text-sm">
-            Sign in to access your equipment rentals
+            เข้าสู่ระบบเพื่อยืมอุปกรณ์
           </p>
 
           {/* Error Message */}
@@ -85,7 +85,7 @@ const Login = () => {
             {/* Student ID Field */}
             <div>
               <label className="block text-sm font-medium text-white/80 mb-2">
-                Student ID
+                รหัสนักศึกษา
               </label>
               <div className="relative group">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 group-focus-within:text-white/80 transition-colors" />
@@ -95,7 +95,7 @@ const Login = () => {
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
                   className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all"
-                  placeholder="Enter your student ID"
+                  placeholder="กรอกรหัสนักศึกษา"
                 />
               </div>
             </div>
@@ -103,7 +103,7 @@ const Login = () => {
             {/* Password Field */}
             <div>
               <label className="block text-sm font-medium text-white/80 mb-2">
-                Password
+                รหัสผ่าน
               </label>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 group-focus-within:text-white/80 transition-colors" />
@@ -137,10 +137,10 @@ const Login = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Processing...
+                  กำลังเข้าสู่ระบบ...
                 </div>
               ) : (
-                'Log In'
+                'เข้าสู่ระบบ'
               )}
             </button>
           </form>
@@ -148,18 +148,18 @@ const Login = () => {
           {/* Divider */}
           <div className="flex items-center my-6">
             <div className="flex-1 border-t border-white/20"></div>
-            <span className="px-4 text-white/50 text-sm">Or</span>
+            <span className="px-4 text-white/50 text-sm">หรือ</span>
             <div className="flex-1 border-t border-white/20"></div>
           </div>
 
           {/* Register Link */}
           <p className="text-center text-white/70 text-sm">
-            Don't have an account?{' '}
+            ยังไม่มีบัญชี?{' '}
             <Link
               to="/register"
               className="text-white font-semibold hover:underline transition-all"
             >
-              Sign Up
+              สมัครสมาชิก
             </Link>
           </p>
         </div>

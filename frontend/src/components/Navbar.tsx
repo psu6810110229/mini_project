@@ -41,8 +41,8 @@ export default function Navbar() {
                             <Link to={isAdmin ? "/admin/rentals" : "/equipments"} className="flex flex-col font-bold leading-tight hover:opacity-80 transition-opacity">
                                 <span className="text-lg text-white">🎓 Photo Club</span>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-white/70">{isAdmin ? "Admin Panel" : " Gear Rental System"}</span>
-                                    <span className="px-1.5 py-0.5 bg-white/20 text-white text-[10px] rounded-full font-bold border border-white/30">V.1.4</span>
+                                    <span className="text-s text-white/70">{isAdmin ? "Admin" : "Gear Rental System"}</span>
+                                    <span className="px-1.5 py-0.5 bg-white/20 text-white text-[12px] rounded-full font-bold border border-white/30">V1.4TH</span>
                                 </div>
                             </Link>
 
@@ -51,11 +51,11 @@ export default function Navbar() {
                                 <div className="flex items-baseline space-x-2">
                                     {!isAdmin && (
                                         <>
-                                            <Link to="/equipments" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/equipments')}`}>
-                                                📦 All Equipment
+                                            <Link to="/equipments" className={`px-4 py-2 rounded-xl text-md font-medium transition-all ${isActive('/equipments')}`}>
+                                                📦 อุปกรณ์ทั้งหมด
                                             </Link>
-                                            <Link to="/my-rentals" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/my-rentals')}`}>
-                                                📋 My Rentals
+                                            <Link to="/my-rentals" className={`px-4 py-2 rounded-xl text-md font-medium transition-all ${isActive('/my-rentals')}`}>
+                                                📋 รายการยืม
                                             </Link>
                                         </>
                                     )}
@@ -63,17 +63,17 @@ export default function Navbar() {
                                     {isAdmin && (
                                         <>
                                             <span className="text-white/60 text-xs font-bold uppercase tracking-widest"></span>
-                                            <Link to="/equipments" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/equipments')}`}>
-                                                📦 View
+                                            <Link to="/equipments" className={`px-4 py-2 rounded-xl text-md font-medium transition-all ${isActive('/equipments')}`}>
+                                                📦 ดูอุปกรณ์
                                             </Link>
-                                            <Link to="/admin/equipments" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/admin/equipments')}`}>
-                                                🔧 Manage
+                                            <Link to="/admin/equipments" className={`px-4 py-2 rounded-xl text-md font-medium transition-all ${isActive('/admin/equipments')}`}>
+                                                🔧 จัดการ
                                             </Link>
-                                            <Link to="/admin/rentals" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/admin/rentals')}`}>
-                                                📋 Rentals
+                                            <Link to="/admin/rentals" className={`px-4 py-2 rounded-xl text-md font-medium transition-all ${isActive('/admin/rentals')}`}>
+                                                📋 รายการยืม
                                             </Link>
-                                            <Link to="/admin/audit-logs" className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${isActive('/admin/audit-logs')}`}>
-                                                📊 Dashboard
+                                            <Link to="/admin/audit-logs" className={`px-4 py-2 rounded-xl text-md font-medium transition-all ${isActive('/admin/audit-logs')}`}>
+                                                📊 แดชบอร์ด
                                             </Link>
                                         </>
                                     )}
@@ -87,10 +87,10 @@ export default function Navbar() {
                             </div>
                             <button
                                 onClick={handleLogoutClick}
-                                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-all duration-200 shadow-lg"
+                                className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-md font-medium text-white bg-red-600 hover:bg-red-700 transition-all duration-200 shadow-lg"
                             >
                                 <LogOut className="h-4 w-4" />
-                                Logout
+                                ออกจากระบบ
                             </button>
 
                             {/* Mobile menu button */}
@@ -110,10 +110,10 @@ export default function Navbar() {
                                 {!isAdmin && (
                                     <>
                                         <Link to="/equipments" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/equipments')}`}>
-                                            📦 All Equipment
+                                            📦 อุปกรณ์ทั้งหมด
                                         </Link>
                                         <Link to="/my-rentals" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/my-rentals')}`}>
-                                            📋 My Rentals
+                                            📋 รายการยืม
                                         </Link>
                                     </>
                                 )}
@@ -121,16 +121,16 @@ export default function Navbar() {
                                 {isAdmin && (
                                     <>
                                         <Link to="/equipments" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/equipments')}`}>
-                                            📦 View Equipment
+                                            📦 ดูอุปกรณ์
                                         </Link>
                                         <Link to="/admin/equipments" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/admin/equipments')}`}>
-                                            🔧 Manage Equipment
+                                            🔧 จัดการอุปกรณ์
                                         </Link>
                                         <Link to="/admin/rentals" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/admin/rentals')}`}>
-                                            📊 Rentals
+                                            📋 รายการยืม
                                         </Link>
                                         <Link to="/admin/audit-logs" onClick={() => setMobileMenuOpen(false)} className={`px-4 py-3 rounded-xl text-sm font-medium transition-all ${isActive('/admin/audit-logs')}`}>
-                                            📊 Dashboard
+                                            📊 แดชบอร์ด
                                         </Link>
                                     </>
                                 )}
@@ -144,7 +144,7 @@ export default function Navbar() {
                                         className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-all"
                                     >
                                         <LogOut className="h-4 w-4" />
-                                        Logout
+                                        ออกจากระบบ
                                     </button>
                                 </div>
                             </div>
@@ -157,20 +157,20 @@ export default function Navbar() {
             {showLogoutModal && (
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
                     <div className="backdrop-blur-2xl bg-slate-900/70 rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-white/20 animate-scale-in">
-                        <h3 className="text-lg font-bold text-white mb-2">⚠️ Confirm Logout</h3>
-                        <p className="text-white/70 mb-6">Are you sure you want to logout?</p>
+                        <h3 className="text-lg font-bold text-white mb-2">⚠️ ยืนยันการออกจากระบบ</h3>
+                        <p className="text-white/70 mb-6">คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบ?</p>
                         <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => setShowLogoutModal(false)}
                                 className="px-4 py-2 rounded-xl text-sm font-medium text-white bg-white/10 hover:bg-white/20 backdrop-blur-xl transition-all duration-200 border border-white/20"
                             >
-                                Cancel
+                                ยกเลิก
                             </button>
                             <button
                                 onClick={handleLogoutConfirm}
                                 className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 shadow-lg transition-all duration-200"
                             >
-                                Logout
+                                ออกจากระบบ
                             </button>
                         </div>
                     </div>

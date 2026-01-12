@@ -108,7 +108,7 @@ export default function AdminDashboard() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
-    if (loading) return <LoadingSpinner message="Loading dashboard..." />;
+    if (loading) return <LoadingSpinner message="กำลังโหลดแดชบอร์ด..." />;
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -116,13 +116,13 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                     <LayoutDashboard className="w-8 h-8 text-white" />
-                    <h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>Admin Dashboard</h1>
+                    <h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>แดชบอร์ดแอดมิน</h1>
                 </div>
                 <button
                     onClick={() => { setShowDeleteModal(true); setDeleteError(''); setDeleteSuccess(''); setDeletePassword(''); setDeleteDays(null); }}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600/30 transition-all"
                 >
-                    <Trash2 className="w-4 h-4" /> Clear Logs
+                    <Trash2 className="w-4 h-4" /> ลบประวัติ
                 </button>
             </div>
 
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <Package className="w-5 h-5 text-white/70" />
-                                <h2 className="text-xl font-bold text-white">Equipment Status</h2>
+                                <h2 className="text-xl font-bold text-white">สถานะอุปกรณ์</h2>
                             </div>
                             <div className="flex gap-1 bg-white/5 p-1 rounded-lg">
                                 {['ALL', 'AVAILABLE', 'MAINTENANCE', 'UNAVAILABLE'].map(status => (
@@ -158,7 +158,7 @@ export default function AdminDashboard() {
                             </div>
                         </div>
                         <div className="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-                            {filteredEquipments.length === 0 ? <p className="text-white/40 text-center py-4">No equipment found</p> : filteredEquipments.map(item => (
+                            {filteredEquipments.length === 0 ? <p className="text-white/40 text-center py-4">ไม่พบอุปกรณ์</p> : filteredEquipments.map(item => (
                                 <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-lg bg-slate-800 bg-cover bg-center" style={{ backgroundImage: `url(${item.imageUrl})` }} />
@@ -185,7 +185,7 @@ export default function AdminDashboard() {
                         <div className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl border border-white/20 shadow-xl p-5">
                             <div className="flex items-center gap-2 mb-3">
                                 <Crown className="w-5 h-5 text-yellow-400" />
-                                <h3 className="font-bold text-white">Top Renters</h3>
+                                <h3 className="font-bold text-white">ผู้ยืมบ่อย</h3>
                             </div>
                             <div className="space-y-3">
                                 {topRenters.slice(0, 3).map((r, i) => (
@@ -194,7 +194,7 @@ export default function AdminDashboard() {
                                             <span className="w-5 h-5 rounded-full bg-yellow-500/20 text-yellow-300 flex items-center justify-center text-xs font-bold">{i + 1}</span>
                                             <span className="text-white/80">{r.name}</span>
                                         </div>
-                                        <span className="text-white font-bold">{r.count} rentals</span>
+                                        <span className="text-white font-bold">{r.count} ครั้ง</span>
                                     </div>
                                 ))}
                             </div>
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
                         <div className="backdrop-blur-2xl bg-slate-900/60 rounded-2xl border border-white/20 shadow-xl p-5">
                             <div className="flex items-center gap-2 mb-3">
                                 <Award className="w-5 h-5 text-blue-400" />
-                                <h3 className="font-bold text-white">Popular Items</h3>
+                                <h3 className="font-bold text-white">ยอดนิยม</h3>
                             </div>
                             <div className="space-y-3">
                                 {mostRentedItems.slice(0, 3).map((item, i) => (
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
                                             <span className="w-5 h-5 rounded-full bg-orange-500/20 text-orange-300 flex items-center justify-center text-xs font-bold">{i + 1}</span>
                                             <span className="text-white/80 truncate max-w-[100px]">{item.name}</span>
                                         </div>
-                                        <span className="text-white font-bold">{rentalCounts[item.id]} times</span>
+                                        <span className="text-white font-bold">{rentalCounts[item.id]} ครั้ง</span>
                                     </div>
                                 ))}
                             </div>

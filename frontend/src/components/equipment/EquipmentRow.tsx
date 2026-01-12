@@ -54,10 +54,16 @@ export default function EquipmentRow({ item, isExpanded, saving, uploadingImage,
                     <h3 className="font-bold text-white text-lg">{item.name}</h3>
                     <p className="text-white/70 text-sm">{item.category}</p>
                     <div className="flex items-center gap-3 mt-1">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${item.status === 'AVAILABLE' ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'}`}>
-                            {item.status === 'AVAILABLE' ? 'Available' : item.status}
-                        </span>
-                        <span className="text-sm text-white/70">{getAvailableCount(item.items)}/{item.items?.length || 0} available</span>
+                        {(() => {
+                            const availableCount = getAvailableCount(item.items);
+                            const isActuallyAvailable = item.status === 'AVAILABLE' && availableCount > 0;
+                            return (
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${isActuallyAvailable ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+                                    {isActuallyAvailable ? 'ว่าง' : 'ไม่ว่าง'}
+                                </span>
+                            );
+                        })()}
+                        <span className="text-sm text-white/70">{getAvailableCount(item.items)}/{item.items?.length || 0} ว่าง</span>
                     </div>
                 </div>
 
@@ -75,20 +81,20 @@ export default function EquipmentRow({ item, isExpanded, saving, uploadingImage,
             <div className={`overflow-hidden transition-all duration-300 ${isExpanded ? 'max-h-96' : 'max-h-0'}`}>
                 {item.items && item.items.length > 0 && (
                     <div className="border-t border-white/10 backdrop-blur-xl bg-slate-800/40 p-4">
-                        <h4 className="text-sm font-bold text-white mb-3">Individual Items</h4>
+                        <h4 className="text-sm font-bold text-white mb-3">รายการย่อย</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             {item.items.map((eqItem) => (
                                 <div key={eqItem.id} className="backdrop-blur-2xl bg-slate-700/50 rounded-xl p-3 border border-white/10 hover:bg-slate-600/50 transition-all">
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="font-bold text-white text-sm">ID: {eqItem.itemCode}</span>
+                                        <span className="font-bold text-white text-sm">Item Code: {eqItem.itemCode}</span>
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusBadge(eqItem.status as EquipmentItemStatus)}`}>{eqItem.status}</span>
                                     </div>
                                     <div className="relative">
                                         <select value={eqItem.status} onChange={(e) => onStatusChange(eqItem.id, e.target.value as EquipmentItemStatus, eqItem.itemCode)} disabled={saving}
                                             className="w-full text-sm backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-lg p-2 text-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50 cursor-pointer appearance-none" style={{ colorScheme: 'dark' }}>
-                                            <option value="AVAILABLE" className="bg-slate-800">✓ Available</option>
-                                            <option value="UNAVAILABLE" className="bg-slate-800">✗ Unavailable</option>
-                                            <option value="RENTED" className="bg-slate-800">◉ Rented</option>
+                                            <option value="AVAILABLE" className="bg-slate-800">✓ ว่าง</option>
+                                            <option value="UNAVAILABLE" className="bg-slate-800">✗ ไม่ว่าง</option>
+                                            <option value="RENTED" className="bg-slate-800">◉ ถูกยืม</option>
                                         </select>
                                         <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
                                             <svg className="w-3 h-3 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>

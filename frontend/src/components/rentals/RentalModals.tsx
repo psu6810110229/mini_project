@@ -40,7 +40,7 @@ export function RentalDetailModal({ rental, isOpen, onClose, onApprove, onReject
                             <div>
                                 <h2 className="text-lg font-bold text-white leading-tight truncate pr-2">{rental.equipment?.name}</h2>
                                 {rental.equipmentItem?.itemCode && (
-                                    <p className="text-white/50 text-xs mt-0.5 font-mono">Code: {rental.equipmentItem.itemCode}</p>
+                                    <p className="text-white/50 text-xs mt-0.5 font-mono">Item Code: {rental.equipmentItem.itemCode}</p>
                                 )}
                             </div>
                             <span className={`flex-shrink-0 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg ${getStatusColor(rental.status)}`}>
@@ -48,9 +48,9 @@ export function RentalDetailModal({ rental, isOpen, onClose, onApprove, onReject
                             </span>
                         </div>
                         <div className="mt-3 flex items-center gap-2 text-xs text-white/60 bg-black/20 w-fit px-2 py-1 rounded-md">
-                            <span className="text-blue-400 font-semibold">{duration} Day{duration !== 1 ? 's' : ''}</span>
+                            <span className="text-blue-400 font-semibold">{duration} วัน</span>
                             <span className="w-px h-3 bg-white/20"></span>
-                            <span>{new Date(rental.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {new Date(rental.endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            <span>{new Date(rental.startDate).toLocaleDateString('th-TH-u-ca-buddhist', { month: 'short', day: 'numeric' })} - {new Date(rental.endDate).toLocaleDateString('th-TH-u-ca-buddhist', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                         </div>
                     </div>
                     <button onClick={onClose} className="text-white/40 hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-1.5 rounded-lg">
@@ -60,19 +60,13 @@ export function RentalDetailModal({ rental, isOpen, onClose, onApprove, onReject
 
                 <div className="overflow-y-auto custom-scrollbar p-5 space-y-4">
                     {/* Requester Info */}
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-inner">
-                                {rental.user?.name?.charAt(0) || '?'}
-                            </div>
-                            <div>
-                                <div className="text-sm font-bold text-white">{rental.user?.name || 'Unknown'}</div>
-                                <div className="text-xs text-white/50">{rental.user?.studentId}</div>
-                            </div>
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-inner flex-shrink-0">
+                            {rental.user?.name?.charAt(0) || '?'}
                         </div>
-                        <div className="text-right">
-                            <div className="text-[10px] text-white/40 uppercase tracking-wide mb-0.5">Contact</div>
-                            <div className="text-xs text-white/80">Student</div>
+                        <div className="min-w-0 flex-1">
+                            <div className="text-sm font-bold text-white truncate">{rental.user?.name || 'ไม่ทราบ'}</div>
+                            <div className="text-xs text-white/50">{rental.user?.studentId}</div>
                         </div>
                     </div>
 
@@ -80,7 +74,7 @@ export function RentalDetailModal({ rental, isOpen, onClose, onApprove, onReject
                     {rental.requestDetails && (
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold text-white/50 flex items-center gap-1.5">
-                                <FileText className="w-3.5 h-3.5" /> Request Note
+                                <FileText className="w-3.5 h-3.5" /> โน้ต
                             </label>
                             <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl text-sm text-white/80 leading-relaxed">
                                 {rental.requestDetails}
@@ -92,12 +86,12 @@ export function RentalDetailModal({ rental, isOpen, onClose, onApprove, onReject
                     {(rental.checkoutImageUrl || rental.returnImageUrl) && (
                         <div className="space-y-2 pt-2 border-t border-white/10">
                             <label className="text-xs font-semibold text-blue-400 flex items-center gap-1.5">
-                                <Camera className="w-3.5 h-3.5" /> Evidence
+                                <Camera className="w-3.5 h-3.5" /> หลักฐาน
                             </label>
                             <div className="grid grid-cols-2 gap-3">
                                 {rental.checkoutImageUrl && (
                                     <a href={rental.checkoutImageUrl} target="_blank" rel="noreferrer" className="group relative block rounded-lg overflow-hidden border border-white/10 bg-black/40 aspect-[4/3] hover:border-blue-500/50 transition-colors">
-                                        <div className="absolute top-2 left-2 z-10 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold text-white border border-white/10">PICKUP</div>
+                                        <div className="absolute top-2 left-2 z-10 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold text-white border border-white/10">รับของ</div>
                                         <img src={rental.checkoutImageUrl} alt="Pickup" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                         {rental.checkoutNote && (
                                             <div className="absolute bottom-0 inset-x-0 bg-black/80 backdrop-blur-sm p-2">
@@ -108,7 +102,7 @@ export function RentalDetailModal({ rental, isOpen, onClose, onApprove, onReject
                                 )}
                                 {rental.returnImageUrl && (
                                     <a href={rental.returnImageUrl} target="_blank" rel="noreferrer" className="group relative block rounded-lg overflow-hidden border border-white/10 bg-black/40 aspect-[4/3] hover:border-green-500/50 transition-colors">
-                                        <div className="absolute top-2 left-2 z-10 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold text-white border border-white/10">RETURN</div>
+                                        <div className="absolute top-2 left-2 z-10 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold text-white border border-white/10">คืนของ</div>
                                         <img src={rental.returnImageUrl} alt="Return" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                         {rental.returnNote && (
                                             <div className="absolute bottom-0 inset-x-0 bg-black/80 backdrop-blur-sm p-2">
@@ -125,15 +119,15 @@ export function RentalDetailModal({ rental, isOpen, onClose, onApprove, onReject
                 {/* Footer Actions */}
                 <div className="p-4 border-t border-white/10 bg-white/5 flex gap-3">
                     <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">
-                        Close
+                        ปิด
                     </button>
                     {rental.status === 'PENDING' && (
                         <>
                             <button onClick={() => { onClose(); onReject(rental.id, rental.user?.name || ''); }} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-rose-300 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 transition-colors">
-                                Reject
+                                ปฏิเสธ
                             </button>
                             <button onClick={() => { onClose(); onApprove(rental.id, rental.user?.name || ''); }} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 shadow-lg shadow-green-500/20 transition-all">
-                                Approve
+                                อนุมัติ
                             </button>
                         </>
                     )}
@@ -167,20 +161,20 @@ export function ActionConfirmModal({ isOpen, action, overlappingPending, onConfi
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 flex items-center justify-center">
                         <AlertTriangle className="h-8 w-8 text-amber-400" />
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Confirm Action</h3>
-                    <p className="text-white/60">Are you sure you want to <span className="text-white font-semibold">{getActionLabel(action.status)}</span><br />for <span className="text-white font-semibold">{action.userName}</span>?</p>
+                    <h3 className="text-xl font-bold text-white mb-2">ยืนยัน</h3>
+                    <p className="text-white/60">แน่ใจหรือเปล่าว่าต้องการ <span className="text-white font-semibold">{getActionLabel(action.status)}</span><br />สำหรับ <span className="text-white font-semibold">{action.userName}</span>?</p>
                     {overlappingPending.length > 0 && (
                         <div className="mt-4 p-3 bg-orange-900/30 border border-orange-500/50 rounded-xl text-left">
-                            <div className="flex items-center gap-2 text-orange-400 font-semibold text-sm mb-2"><AlertOctagon className="w-4 h-4" /> Warning: Overlapping requests will be auto-rejected</div>
+                            <div className="flex items-center gap-2 text-orange-400 font-semibold text-sm mb-2"><AlertOctagon className="w-4 h-4" />⚠️ คำขออื่นที่ซ้อนจะถูกปฏิเสธอัตโนมัติ</div>
                             <ul className="text-white/70 text-sm space-y-1">
-                                {overlappingPending.map((r) => (<li key={r.id} className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span>{r.user?.name || 'Unknown'}</li>))}
+                                {overlappingPending.map((r) => (<li key={r.id} className="flex items-center gap-2"><span className="w-1.5 h-1.5 bg-orange-400 rounded-full"></span>{r.user?.name || 'ไม่ทราบ'}</li>))}
                             </ul>
                         </div>
                     )}
                 </div>
                 <div className="flex gap-3">
-                    <button onClick={onCancel} className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 border border-white/20">Cancel</button>
-                    <button onClick={onConfirm} className={`flex-1 px-4 py-3 rounded-xl font-bold text-white shadow-lg ${action.status === 'REJECTED' ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-green-500 to-green-600'}`}>Confirm</button>
+                    <button onClick={onCancel} className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 border border-white/20">ยกเลิก</button>
+                    <button onClick={onConfirm} className={`flex-1 px-4 py-3 rounded-xl font-bold text-white shadow-lg ${action.status === 'REJECTED' ? 'bg-gradient-to-r from-red-500 to-red-600' : 'bg-gradient-to-r from-green-500 to-green-600'}`}>ยืนยัน</button>
                 </div>
             </div>
         </div>
@@ -213,22 +207,22 @@ export function RejectModal({ isOpen, rental, note, onNoteChange, onConfirm, onC
                     <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center"><X className="w-6 h-6 text-red-400" /></div>
                         <div>
-                            <h3 className="text-xl font-bold text-white">Reject Request</h3>
-                            <p className="text-white/50 text-sm">From {rental.userName} for {rental.equipmentName}</p>
+                            <h3 className="text-xl font-bold text-white">ปฏิเสธคำขอ</h3>
+                            <p className="text-white/50 text-sm">จาก {rental.userName} สำหรับ {rental.equipmentName}</p>
                         </div>
                     </div>
                 </div>
                 <div className="p-6 space-y-4">
-                    <p className="text-white/70">Are you sure you want to reject this rental request?</p>
+                    <p className="text-white/70">แน่ใจหรือเปล่าว่าต้องการปฏิเสธคำขอนี้?</p>
                     <div>
-                        <label className="block text-sm font-medium text-white/70 mb-2">Note to user <span className="text-white/40">(optional)</span></label>
-                        <textarea value={note} onChange={(e) => onNoteChange(e.target.value)} placeholder="e.g., Equipment is unavailable..." rows={3} className="w-full bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none" />
+                        <label className="block text-sm font-medium text-white/70 mb-2">แจ้งเหตุผล <span className="text-white/40">(ถ้ามี)</span></label>
+                        <textarea value={note} onChange={(e) => onNoteChange(e.target.value)} placeholder="เช่น อุปกรณ์ไม่ว่าง..." rows={3} className="w-full bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none" />
                     </div>
                 </div>
                 <div className="p-6 border-t border-white/10 flex gap-3">
-                    <button onClick={onCancel} disabled={loading} className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 border border-white/20 disabled:opacity-50">Cancel</button>
+                    <button onClick={onCancel} disabled={loading} className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 border border-white/20 disabled:opacity-50">ยกเลิก</button>
                     <button onClick={onConfirm} disabled={loading} className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2">
-                        {loading ? <><Loader className="w-4 h-4 animate-spin" /> Rejecting...</> : 'Reject Request'}
+                        {loading ? <><Loader className="w-4 h-4 animate-spin" /> กำลังปฏิเสธ...</> : 'ปฏิเสธคำขอ'}
                     </button>
                 </div>
             </div>
@@ -258,10 +252,10 @@ export function BatchActionModal({ isOpen, action, selectedIds, rentals, process
     if (!isOpen || !action) return null;
 
     const actionConfig: Record<string, { label: string; bgClass: string; iconClass: string; btnClass: string }> = {
-        APPROVED: { label: 'Approve', bgClass: 'bg-green-500/20', iconClass: 'text-green-400', btnClass: 'bg-gradient-to-r from-green-500 to-green-600' },
-        CHECKED_OUT: { label: 'Checkout', bgClass: 'bg-blue-500/20', iconClass: 'text-blue-400', btnClass: 'bg-gradient-to-r from-blue-500 to-blue-600' },
-        RETURNED: { label: 'Return', bgClass: 'bg-gray-500/20', iconClass: 'text-gray-400', btnClass: 'bg-gradient-to-r from-gray-500 to-gray-600' },
-        REJECTED: { label: 'Reject', bgClass: 'bg-red-500/20', iconClass: 'text-red-400', btnClass: 'bg-gradient-to-r from-red-500 to-red-600' }
+        APPROVED: { label: 'อนุมัติ', bgClass: 'bg-green-500/20', iconClass: 'text-green-400', btnClass: 'bg-gradient-to-r from-green-500 to-green-600' },
+        CHECKED_OUT: { label: 'รับของ', bgClass: 'bg-blue-500/20', iconClass: 'text-blue-400', btnClass: 'bg-gradient-to-r from-blue-500 to-blue-600' },
+        RETURNED: { label: 'คืนของ', bgClass: 'bg-gray-500/20', iconClass: 'text-gray-400', btnClass: 'bg-gradient-to-r from-gray-500 to-gray-600' },
+        REJECTED: { label: 'ปฏิเสธ', bgClass: 'bg-red-500/20', iconClass: 'text-red-400', btnClass: 'bg-gradient-to-r from-red-500 to-red-600' }
     };
     const { label, bgClass, iconClass, btnClass } = actionConfig[action];
 
@@ -275,25 +269,25 @@ export function BatchActionModal({ isOpen, action, selectedIds, rentals, process
                             {action === 'APPROVED' ? <CheckCircle className={`w-6 h-6 ${iconClass}`} /> : action === 'REJECTED' ? <X className={`w-6 h-6 ${iconClass}`} /> : <Package className={`w-6 h-6 ${iconClass}`} />}
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-white">Batch {label}</h3>
-                            <p className="text-white/50 text-sm">{processing ? `Processing ${progress.current}/${progress.total}...` : `${selectedIds.size} rental(s) will be processed`}</p>
+                            <h3 className="text-xl font-bold text-white">ดำเนินการหลายรายการ: {label}</h3>
+                            <p className="text-white/50 text-sm">{processing ? `กำลังดำเนินการ ${progress.current}/${progress.total}...` : `จะดำเนินการ ${selectedIds.size} รายการ`}</p>
                         </div>
                     </div>
                 </div>
                 <div className="p-6">
                     {processing ? (
                         <div className="space-y-4">
-                            <div className="flex items-center gap-3"><Loader className="w-5 h-5 text-blue-400 animate-spin" /><span className="text-white">Processing rentals...</span></div>
+                            <div className="flex items-center gap-3"><Loader className="w-5 h-5 text-blue-400 animate-spin" /><span className="text-white">กำลังดำเนินการ...</span></div>
                             <div className="w-full bg-white/10 rounded-full h-2"><div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${(progress.current / progress.total) * 100}%` }} /></div>
                         </div>
                     ) : progress.errors.length > 0 ? (
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2 text-red-400"><AlertTriangle className="w-5 h-5" /><span className="font-medium">Some items failed:</span></div>
+                            <div className="flex items-center gap-2 text-red-400"><AlertTriangle className="w-5 h-5" /><span className="font-medium">บางรายการมีปัญหา:</span></div>
                             <div className="max-h-40 overflow-y-auto space-y-1">{progress.errors.map((err, i) => <p key={i} className="text-sm text-red-300/80 bg-red-500/10 rounded-lg px-3 py-2">{err}</p>)}</div>
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            <p className="text-white/70">Are you sure you want to <span className="font-semibold text-white">{label.toLowerCase()}</span> the following rentals?</p>
+                            <p className="text-white/70">แน่ใจหรือเปล่าว่าต้องการ <span className="font-semibold text-white">{label.toLowerCase()}</span> รายการเหล่านี้?</p>
                             <div className="max-h-32 overflow-y-auto space-y-2">
                                 {Array.from(selectedIds).map(id => {
                                     const rental = rentals.find(r => r.id === id);
@@ -303,16 +297,16 @@ export function BatchActionModal({ isOpen, action, selectedIds, rentals, process
                             {/* Reject reason input for batch reject */}
                             {action === 'REJECTED' && onRejectNoteChange && (
                                 <div className="mt-4">
-                                    <label className="block text-sm font-medium text-white/70 mb-2">Reject reason <span className="text-white/40">(optional)</span></label>
-                                    <textarea value={rejectNote || ''} onChange={(e) => onRejectNoteChange(e.target.value)} placeholder="e.g., Equipment not available for this period..." rows={2} className="w-full bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none" />
+                                    <label className="block text-sm font-medium text-white/70 mb-2">เหตุผลที่ปฏิเสธ <span className="text-white/40">(ถ้ามี)</span></label>
+                                    <textarea value={rejectNote || ''} onChange={(e) => onRejectNoteChange(e.target.value)} placeholder="เช่น อุปกรณ์ไม่ว่างช่วงนี้..." rows={2} className="w-full bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none" />
                                 </div>
                             )}
                         </div>
                     )}
                 </div>
                 <div className="p-6 border-t border-white/10 flex gap-3">
-                    <button onClick={onClose} disabled={processing} className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 border border-white/20 disabled:opacity-50">{progress.errors.length > 0 ? 'Close' : 'Cancel'}</button>
-                    {progress.errors.length === 0 && <button onClick={onConfirm} disabled={processing} className={`flex-1 px-4 py-3 rounded-xl font-bold text-white shadow-lg disabled:opacity-50 ${btnClass}`}>{processing ? 'Processing...' : 'Confirm'}</button>}
+                    <button onClick={onClose} disabled={processing} className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 border border-white/20 disabled:opacity-50">{progress.errors.length > 0 ? 'ปิด' : 'ยกเลิก'}</button>
+                    {progress.errors.length === 0 && <button onClick={onConfirm} disabled={processing} className={`flex-1 px-4 py-3 rounded-xl font-bold text-white shadow-lg disabled:opacity-50 ${btnClass}`}>{processing ? 'กำลังดำเนินการ...' : 'ยืนยัน'}</button>}
                 </div>
             </div>
         </div>

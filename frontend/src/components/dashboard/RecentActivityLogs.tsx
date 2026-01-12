@@ -46,15 +46,14 @@ export default function RecentActivityLogs({
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <div className="flex items-center gap-2">
                     <FileText className="w-5 h-5 text-white/70" />
-                    <h2 className="text-xl font-bold text-white">Recent Activity</h2>
+                    <h2 className="text-xl font-bold text-white">ประวัติกิจกรรม</h2>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex gap-1">
                         {[
-                            { key: 'ALL', label: 'All', icon: '📋' },
-                            { key: 'Rental', label: 'Rentals', icon: '📦' },
-                            { key: 'Equipment', label: 'Equipment', icon: '🔧' },
-                            { key: 'User', label: 'Users', icon: '👤' },
+                            { key: 'ALL', label: 'ทั้งหมด', icon: '📋' },
+                            { key: 'Rental', label: 'การยืม', icon: '📦' },
+                            { key: 'Equipment', label: 'อุปกรณ์', icon: '🔧' },
                         ].map(cat => (
                             <button key={cat.key} onClick={() => setFilterCategory(cat.key)}
                                 className={`px-2 py-1 rounded-lg text-xs font-medium transition-all ${filterCategory === cat.key ? 'bg-white/20 text-white' : 'text-white/50 hover:text-white hover:bg-white/10'}`}>
@@ -62,7 +61,7 @@ export default function RecentActivityLogs({
                             </button>
                         ))}
                     </div>
-                    <SearchBar value={searchUser} onChange={setSearchUser} placeholder="Search user..." />
+                    <SearchBar value={searchUser} onChange={setSearchUser} placeholder="ค้นหาผู้ใช้..." />
                     <button onClick={() => setSortOrder(s => s === 'newest' ? 'oldest' : 'newest')} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/60">
                         {sortOrder === 'newest' ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
                     </button>
@@ -70,7 +69,7 @@ export default function RecentActivityLogs({
             </div>
 
             {filteredLogs.length === 0 ? (
-                <EmptyState icon={FileText} message="No activity logs found" />
+                <EmptyState icon={FileText} message="ไม่พบประวัติกิจกรรม" />
             ) : (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                     {filteredLogs.map(log => {
@@ -107,19 +106,19 @@ export default function RecentActivityLogs({
                                 {isExpanded && details && (
                                     <div className="px-4 pb-3 space-y-2 border-t border-white/10 bg-black/20">
                                         <div className="pt-3 grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
-                                            {details.equipmentName && <DetailItem label="Equipment" value={details.equipmentName} />}
-                                            {details.equipmentId && <DetailItem label="Equipment ID" value={details.equipmentId.slice(0, 8) + '...'} />}
-                                            {details.equipmentItemId && <DetailItem label="Item ID" value={details.equipmentItemId.slice(0, 8) + '...'} />}
-                                            {details.itemCode && <DetailItem label="Item Code" value={details.itemCode} />}
-                                            {details.startDate && <DetailItem label="Start Date" value={new Date(details.startDate).toLocaleDateString()} />}
-                                            {details.endDate && <DetailItem label="End Date" value={new Date(details.endDate).toLocaleDateString()} />}
-                                            {details.previousStatus && <DetailItem label="Previous Status" value={details.previousStatus} />}
-                                            {details.newStatus && <DetailItem label="New Status" value={details.newStatus} />}
-                                            {details.reason && <DetailItem label="Reason" value={details.reason} />}
-                                            {details.rejectReason && <DetailItem label="Reject Reason" value={details.rejectReason} />}
-                                            {details.oldStatus && details.newStatus && <DetailItem label="Status Change" value={`${details.oldStatus} → ${details.newStatus}`} />}
+                                            {details.equipmentName && <DetailItem label="อุปกรณ์" value={details.equipmentName} />}
+                                            {details.equipmentId && <DetailItem label="ID อุปกรณ์" value={details.equipmentId.slice(0, 8) + '...'} />}
+                                            {details.equipmentItemId && <DetailItem label="ID รายการ" value={details.equipmentItemId.slice(0, 8) + '...'} />}
+                                            {details.itemCode && <DetailItem label="รหัสรายการ" value={details.itemCode} />}
+                                            {details.startDate && <DetailItem label="วันเริ่ม" value={new Date(details.startDate).toLocaleDateString('th-TH-u-ca-buddhist')} />}
+                                            {details.endDate && <DetailItem label="วันสิ้นสุด" value={new Date(details.endDate).toLocaleDateString('th-TH-u-ca-buddhist')} />}
+                                            {details.previousStatus && <DetailItem label="สถานะเดิม" value={details.previousStatus} />}
+                                            {details.newStatus && <DetailItem label="สถานะใหม่" value={details.newStatus} />}
+                                            {details.reason && <DetailItem label="เหตุผล" value={details.reason} />}
+                                            {details.rejectReason && <DetailItem label="เหตุผลที่ปฏิเสธ" value={details.rejectReason} />}
+                                            {details.oldStatus && details.newStatus && <DetailItem label="เปลี่ยนสถานะ" value={`${details.oldStatus} → ${details.newStatus}`} />}
                                         </div>
-                                        <p className="text-white/30 text-xs">Full time: {new Date(log.createdAt).toLocaleString()}</p>
+                                        <p className="text-white/30 text-xs">เวลาเต็ม: {new Date(log.createdAt).toLocaleString('th-TH-u-ca-buddhist')}</p>
                                     </div>
                                 )}
                             </div>

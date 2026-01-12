@@ -23,7 +23,7 @@ export default function DateRangePicker({
         <div className={`flex flex-col sm:flex-row gap-4 ${className}`}>
             <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Start Date
+                    วันเริ่ม
                 </label>
                 <input
                     type="datetime-local"
@@ -36,7 +36,7 @@ export default function DateRangePicker({
 
             <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                    End Date
+                    วันสิ้นสุด
                 </label>
                 <input
                     type="datetime-local"

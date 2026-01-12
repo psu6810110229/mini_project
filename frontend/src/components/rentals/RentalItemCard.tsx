@@ -9,25 +9,25 @@ interface RentalItemCardProps {
 
 const getStatusInfo = (status: string) => {
     const map: Record<string, { label: string; color: string; bgColor: string }> = {
-        'PENDING': { label: 'Pending', color: 'text-amber-400', bgColor: 'bg-amber-500/20 border-amber-500/30' },
-        'APPROVED': { label: 'Approved', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20 border-emerald-500/30' },
-        'CHECKED_OUT': { label: 'Checked Out', color: 'text-sky-400', bgColor: 'bg-sky-500/20 border-sky-500/30' },
-        'RETURNED': { label: 'Returned', color: 'text-slate-400', bgColor: 'bg-slate-500/20 border-slate-500/30' },
-        'REJECTED': { label: 'Rejected', color: 'text-rose-400', bgColor: 'bg-rose-500/20 border-rose-500/30' },
-        'CANCELLED': { label: 'Cancelled', color: 'text-orange-400', bgColor: 'bg-orange-500/20 border-orange-500/30' },
+        'PENDING': { label: 'รอดำเนินการ', color: 'text-amber-400', bgColor: 'bg-amber-500/20 border-amber-500/30' },
+        'APPROVED': { label: 'อนุมัติแล้ว', color: 'text-emerald-400', bgColor: 'bg-emerald-500/20 border-emerald-500/30' },
+        'CHECKED_OUT': { label: 'รับของแล้ว', color: 'text-sky-400', bgColor: 'bg-sky-500/20 border-sky-500/30' },
+        'RETURNED': { label: 'คืนแล้ว', color: 'text-slate-400', bgColor: 'bg-slate-500/20 border-slate-500/30' },
+        'REJECTED': { label: 'ปฏิเสธแล้ว', color: 'text-rose-400', bgColor: 'bg-rose-500/20 border-rose-500/30' },
+        'CANCELLED': { label: 'ยกเลิกแล้ว', color: 'text-orange-400', bgColor: 'bg-orange-500/20 border-orange-500/30' },
     };
     return map[status] || { label: status, color: 'text-slate-400', bgColor: 'bg-slate-500/20 border-slate-500/30' };
 };
 
-const formatDate = (d: string) => new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-const formatTime = (d: string) => new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+const formatDate = (d: string) => new Date(d).toLocaleDateString('th-TH-u-ca-buddhist', { day: '2-digit', month: 'short', year: 'numeric' });
+const formatTime = (d: string) => new Date(d).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
 const getDaysRemaining = (endDate: string, status: string) => {
     if (!['APPROVED', 'CHECKED_OUT'].includes(status)) return null;
     const diff = Math.ceil((new Date(endDate).getTime() - Date.now()) / 86400000);
-    if (diff < 0) return { text: 'Overdue', color: 'text-red-400', bgColor: 'bg-red-500/20' };
-    if (diff === 0) return { text: 'Due today', color: 'text-amber-400', bgColor: 'bg-amber-500/20' };
-    return { text: `${diff} day${diff > 1 ? 's' : ''} left`, color: 'text-green-400', bgColor: 'bg-green-500/20' };
+    if (diff < 0) return { text: 'เลยกำหนดแล้ว!', color: 'text-red-400', bgColor: 'bg-red-500/20' };
+    if (diff === 0) return { text: 'ครบวันนี้', color: 'text-amber-400', bgColor: 'bg-amber-500/20' };
+    return { text: `อีก ${diff} วัน`, color: 'text-green-400', bgColor: 'bg-green-500/20' };
 };
 
 const canCancel = (status: string) => ['PENDING', 'APPROVED'].includes(status);
@@ -55,8 +55,8 @@ export default function RentalItemCard({ rental, onCancel, onUpload }: RentalIte
                 <div className="flex-1 p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                         <div>
-                            <h3 className="font-bold text-white text-lg">{rental.equipment?.name || 'Unknown'}</h3>
-                            {rental.equipmentItem?.itemCode && <p className="text-white/50 text-sm">Item ID: {rental.equipmentItem.itemCode}</p>}
+                            <h3 className="font-bold text-white text-lg">{rental.equipment?.name || 'ไม่ทราบ'}</h3>
+                            {rental.equipmentItem?.itemCode && <p className="text-white/50 text-sm">Item Code: {rental.equipmentItem.itemCode}</p>}
                         </div>
                         <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${st.color} ${st.bgColor} border`}>{st.label}</div>
                     </div>
@@ -64,13 +64,13 @@ export default function RentalItemCard({ rental, onCancel, onUpload }: RentalIte
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                         <div className="flex items-center gap-2 text-sm bg-white/5 rounded-lg px-3 py-2">
                             <Calendar className="w-4 h-4 text-white/50" />
-                            <span className="text-white/50">Start:</span>
+                            <span className="text-white/50">เริ่ม:</span>
                             <span className="text-white font-medium">{formatDate(rental.startDate)}</span>
                             <span className="text-white/40 text-xs">{formatTime(rental.startDate)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm bg-white/5 rounded-lg px-3 py-2">
                             <Clock className="w-4 h-4 text-white/50" />
-                            <span className="text-white/50">End:</span>
+                            <span className="text-white/50">ถึง:</span>
                             <span className="text-white font-medium">{formatDate(rental.endDate)}</span>
                             <span className="text-white/40 text-xs">{formatTime(rental.endDate)}</span>
                         </div>
@@ -81,8 +81,8 @@ export default function RentalItemCard({ rental, onCancel, onUpload }: RentalIte
 
                         {/* Cancel Button */}
                         {onCancel && canCancel(rental.status) && (
-                            <button onClick={() => onCancel(rental.id, rental.equipment?.name || 'Unknown')} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 text-sm font-medium transition-all border border-red-500/30 hover:border-red-500/50">
-                                <Ban className="w-3.5 h-3.5" /> Cancel Request
+                            <button onClick={() => onCancel(rental.id, rental.equipment?.name || 'ไม่ทราบ')} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 text-sm font-medium transition-all border border-red-500/30 hover:border-red-500/50">
+                                <Ban className="w-3.5 h-3.5" /> ยกเลิกคำขอ
                             </button>
                         )}
 
@@ -90,20 +90,20 @@ export default function RentalItemCard({ rental, onCancel, onUpload }: RentalIte
                         {onUpload && canUpload(rental.status) && (
                             <button onClick={() => onUpload(rental)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 hover:text-blue-300 text-sm font-medium transition-all border border-blue-500/30 hover:border-blue-500/50">
                                 <Camera className="w-3.5 h-3.5" />
-                                {rental.status === 'APPROVED' ? 'Upload Pickup Photo' : 'Upload Return Photo'}
+                                {rental.status === 'APPROVED' ? 'ถ่ายรูปตอนรับของ' : 'ถ่ายรูปตอนคืนของ'}
                             </button>
                         )}
 
                         {/* Pickup Evidence Badge */}
                         {rental.checkoutImageUrl && (
                             <span className="inline-flex items-center gap-1.5 text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded-lg border border-blue-500/20">
-                                <CheckCircle className="w-3 h-3" /> <span>Pickup Photo</span>
+                                <CheckCircle className="w-3 h-3" /> <span>📸 รับของแล้ว</span>
                             </span>
                         )}
                         {/* Return Evidence Badge */}
                         {rental.returnImageUrl && (
                             <span className="inline-flex items-center gap-1.5 text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/20">
-                                <CheckCircle className="w-3 h-3" /> <span>Return Photo</span>
+                                <CheckCircle className="w-3 h-3" /> <span>📸 คืนแล้ว</span>
                             </span>
                         )}
                     </div>
@@ -118,7 +118,7 @@ export default function RentalItemCard({ rental, onCancel, onUpload }: RentalIte
                         <div className="mt-3 pt-3 border-t border-red-500/20">
                             <div className="flex items-start gap-2 bg-red-500/10 rounded-lg p-3 border border-red-500/20">
                                 <AlertTriangle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
-                                <div><p className="text-sm font-medium text-red-400 mb-1">Rejection Reason:</p><p className="text-sm text-red-300/80">{rental.rejectReason}</p></div>
+                                <div><p className="text-sm font-medium text-red-400 mb-1">เหตุผล:</p><p className="text-sm text-red-300/80">{rental.rejectReason}</p></div>
                             </div>
                         </div>
                     )}

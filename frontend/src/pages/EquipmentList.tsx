@@ -39,7 +39,7 @@ export default function EquipmentList() {
             const equipmentCategories = [...new Set(response.data.map(e => e.category).filter(Boolean))];
             setCategories(mergeWithEquipmentCategories(equipmentCategories));
         } catch (err) {
-            setError('Failed to load equipments');
+            setError('โหลดข้อมูลไม่สำเร็จ');
         } finally {
             setLoading(false);
         }
@@ -58,13 +58,13 @@ export default function EquipmentList() {
     }, [equipments, filterCategories, searchName]);
 
     // ===== CONDITIONAL RENDERING =====
-    if (loading) return <LoadingSpinner message="Loading equipment..." />;
+    if (loading) return <LoadingSpinner message="กำลังโหลด..." />;
     if (error) return <div className="min-h-[80vh] flex items-center justify-center"><div className="backdrop-blur-2xl bg-red-900/50 rounded-2xl p-8 border border-red-500/30"><p className="text-red-200">{error}</p></div></div>;
 
     // ===== MAIN RENDER =====
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-8" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>Available Equipment</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-8" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>อุปกรณ์พร้อมให้ยืม</h1>
 
             {/* Filters Section */}
             {equipments.length > 0 && (
@@ -81,7 +81,7 @@ export default function EquipmentList() {
             <EquipmentGrid equipments={filteredEquipments} />
 
             {/* Empty State */}
-            {filteredEquipments.length === 0 && <EmptyState icon={Package} message={equipments.length === 0 ? 'No equipment found.' : 'No equipment matches the filter.'} />}
+            {filteredEquipments.length === 0 && <EmptyState icon={Package} message={equipments.length === 0 ? 'ไม่พบอุปกรณ์' : 'ไม่พบอุปกรณ์ที่ตรงกับตัวกรอง'} />}
         </div>
     );
 }

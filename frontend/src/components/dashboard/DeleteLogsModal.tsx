@@ -29,20 +29,20 @@ export default function DeleteLogsModal({
                             <Trash2 className="w-6 h-6 text-red-400" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold text-white">Clear Activity Logs</h3>
-                            <p className="text-white/50 text-sm">This action cannot be undone</p>
+                            <h3 className="text-xl font-bold text-white">ลบประวัติกิจกรรม</h3>
+                            <p className="text-white/50 text-sm">ลบแล้วไม่สามารถกู้คืนได้</p>
                         </div>
                     </div>
                 </div>
                 <div className="p-6 space-y-4">
                     {/* Time range selection */}
                     <div>
-                        <label className="block text-sm font-medium text-white/70 mb-2">Delete Range</label>
+                        <label className="block text-sm font-medium text-white/70 mb-2">ช่วงที่ต้องการลบ</label>
                         <div className="grid grid-cols-3 gap-2">
                             {[
-                                { value: 7, label: 'Outer 7d' }, // Shorten label for mobile
-                                { value: 30, label: 'Outer 30d' },
-                                { value: null, label: 'All Logs' },
+                                { value: 7, label: 'เก่ากว่า 7 วัน' },
+                                { value: 30, label: 'เก่ากว่า 30 วัน' },
+                                { value: null, label: 'ทั้งหมด' },
                             ].map(opt => (
                                 <button
                                     key={String(opt.value)}
@@ -58,13 +58,13 @@ export default function DeleteLogsModal({
                     {/* Admin password */}
                     <div>
                         <label className="block text-sm font-medium text-white/70 mb-2">
-                            <Lock className="inline w-4 h-4 mr-1" /> Admin Password
+                            <Lock className="inline w-4 h-4 mr-1" /> รหัสผ่านแอดมิน
                         </label>
                         <input
                             type="password"
                             value={deletePassword}
                             onChange={(e) => setDeletePassword(e.target.value)}
-                            placeholder="Enter admin password to confirm"
+                            placeholder="กรอกรหัสผ่านเพื่อยืนยัน"
                             className="w-full bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500/50"
                         />
                     </div>
@@ -89,14 +89,14 @@ export default function DeleteLogsModal({
                         disabled={deleteLoading}
                         className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 border border-white/20 disabled:opacity-50"
                     >
-                        Cancel
+                        ยกเลิก
                     </button>
                     <button
                         onClick={onDelete}
                         disabled={deleteLoading || !deletePassword}
                         className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                        {deleteLoading ? <><Loader className="w-4 h-4 animate-spin" /> Deleting...</> : 'Delete Logs'}
+                        {deleteLoading ? <><Loader className="w-4 h-4 animate-spin" /> กำลังลบ...</> : 'ลบประวัติ'}
                     </button>
                 </div>
             </div>

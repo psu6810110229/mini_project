@@ -35,7 +35,7 @@ export default function MyRentals() {
         try {
             const response = await apiClient.get<Rental[]>('/rentals/me');
             setRentals(response.data.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
-        } catch (err: any) { setError(err.response?.data?.message || 'Failed to load rentals'); }
+        } catch (err: any) { setError(err.response?.data?.message || 'โหลดข้อมูลไม่สำเร็จ'); }
         finally { setLoading(false); }
     };
 
@@ -47,10 +47,10 @@ export default function MyRentals() {
         try {
             await apiClient.patch(`/rentals/${cancellingRental.id}/status`, { status: 'CANCELLED' });
             await fetchMyRentals();
-            setShowCancelModal(false); setCancellingRental(null); setSuccessMessage('Rental cancelled successfully');
+            setShowCancelModal(false); setCancellingRental(null); setSuccessMessage('ยกเลิกรายการยืมสำเร็จ');
         } catch (err: any) {
-            const msg = err.response?.data?.message || 'Failed to cancel';
-            setError(msg.includes('CHECKED_OUT') ? 'You have already picked up this equipment.' : msg);
+            const msg = err.response?.data?.message || 'ยกเลิกไม่สำเร็จ';
+            setError(msg.includes('CHECKED_OUT') ? 'คุณรับอุปกรณ์ไปแล้ว ไม่สามารถยกเลิกได้' : msg);
         } finally { setCancelLoading(false); }
     };
 
@@ -62,7 +62,7 @@ export default function MyRentals() {
 
     const handleUploadSuccess = () => {
         fetchMyRentals();
-        setSuccessMessage('Evidence uploaded successfully');
+        setSuccessMessage('อัปโหลดหลักฐานสำเร็จ');
         setTimeout(() => setSuccessMessage(''), 3000);
     };
 
@@ -90,11 +90,11 @@ export default function MyRentals() {
         { key: 'CANCELLED', label: 'Cancelled', color: 'bg-orange-600', icon: <Ban className="w-4 h-4" /> },
     ];
 
-    if (loading) return <LoadingSpinner message="Loading your rentals..." />;
+    if (loading) return <LoadingSpinner message="กำลังโหลดรายการยืม..." />;
 
     return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto">
-            <div className="flex items-center gap-3 mb-6"><History className="w-8 h-8 text-white" /><h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>My Rentals</h1></div>
+            <div className="flex items-center gap-3 mb-6"><History className="w-8 h-8 text-white" /><h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>รายการยืมของฉัน</h1></div>
 
             {successMessage && (
                 <div className="mb-6 flex gap-3 backdrop-blur-2xl bg-green-900/50 border border-green-500/30 rounded-xl p-4 shadow-lg animate-fade-in">
@@ -112,15 +112,15 @@ export default function MyRentals() {
 
             <div className="flex gap-2 mb-6">
                 <button onClick={() => { setActiveTab('active'); setActiveStatusFilter('ALL'); }} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all ${activeTab === 'active' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50 border border-white/10'}`}>
-                    <Activity className="w-4 h-4" /> Active {activeRentals.length > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'active' ? 'bg-white/20' : 'bg-blue-500/30'}`}>{activeRentals.length}</span>}
+                    <Activity className="w-4 h-4" /> กำลังดำเนินการ {activeRentals.length > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'active' ? 'bg-white/20' : 'bg-blue-500/30'}`}>{activeRentals.length}</span>}
                 </button>
                 <button onClick={() => { setActiveTab('history'); setHistoryStatusFilter('ALL'); }} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all ${activeTab === 'history' ? 'bg-gradient-to-r from-slate-600 to-slate-700 text-white shadow-lg' : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50 border border-white/10'}`}>
-                    <Archive className="w-4 h-4" /> History {historyRentals.length > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'history' ? 'bg-white/20' : 'bg-slate-500/30'}`}>{historyRentals.length}</span>}
+                    <Archive className="w-4 h-4" /> ประวัติ {historyRentals.length > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'history' ? 'bg-white/20' : 'bg-slate-500/30'}`}>{historyRentals.length}</span>}
                 </button>
             </div>
 
             <div className="mb-6">
-                <div className="flex items-center gap-2 mb-3"><Filter className="w-5 h-5 text-white/70" /><span className="text-white/70 font-medium">Filter by Status</span></div>
+                <div className="flex items-center gap-2 mb-3"><Filter className="w-5 h-5 text-white/70" /><span className="text-white/70 font-medium">กรองตามสถานะ</span></div>
                 <div className="flex flex-wrap gap-2">
                     {(activeTab === 'active' ? activeFilterButtons : historyFilterButtons).map(({ key, label, color, icon }) => (
                         <button key={key} onClick={() => activeTab === 'active' ? setActiveStatusFilter(key as ActiveStatusFilter) : setHistoryStatusFilter(key as HistoryStatusFilter)}
@@ -132,7 +132,7 @@ export default function MyRentals() {
             </div>
 
             {displayedRentals.length === 0 ? (
-                <EmptyState icon={activeTab === 'active' ? Activity : Archive} message={activeTab === 'active' ? "No active rentals. You don't have any pending or active requests." : "No rental history. Your completed rentals will appear here."} />
+                <EmptyState icon={activeTab === 'active' ? Activity : Archive} message={activeTab === 'active' ? "ไม่มีรายการที่กำลังดำเนินการ" : "ไม่มีประวัติการยืม"} />
             ) : (
                 <div className="space-y-4">
                     {displayedRentals.map(rental => (
@@ -146,8 +146,8 @@ export default function MyRentals() {
                 </div>
             )}
 
-            <ConfirmModal isOpen={showCancelModal} title="Cancel Rental Request" message={`Cancel your request for ${cancellingRental?.name}?`} variant="danger" confirmLabel="Cancel Request" cancelLabel="Keep Request" onConfirm={handleConfirmCancel} onCancel={() => { setShowCancelModal(false); setCancellingRental(null); }} loading={cancelLoading}>
-                <p className="text-amber-400/80 text-sm mt-2">This action cannot be undone.</p>
+            <ConfirmModal isOpen={showCancelModal} title="ยกเลิกรายการยืม" message={`ต้องการยกเลิกคำขอยืม ${cancellingRental?.name} หรือไม่?`} variant="danger" confirmLabel="ยกเลิก" cancelLabel="ไม่ยกเลิก" onConfirm={handleConfirmCancel} onCancel={() => { setShowCancelModal(false); setCancellingRental(null); }} loading={cancelLoading}>
+                <p className="text-amber-400/80 text-sm mt-2">การกระทำนี้ไม่สามารถย้อนกลับได้</p>
             </ConfirmModal>
 
             {uploadRental && (

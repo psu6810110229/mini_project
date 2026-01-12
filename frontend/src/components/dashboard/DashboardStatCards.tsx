@@ -26,10 +26,10 @@ export default function DashboardStatCards({ rentals, equipments }: StatCardsPro
 
     return (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <StatCard icon={Calendar} label="Today's Rentals" value={todayRentals.length} sub={`${todayUniqueUsers} unique users`} color="slate" />
-            <StatCard icon={Activity} label="Active Rentals" value={activeRentals.length} sub="pending/approved/checked out" color="slate" />
-            <StatCard icon={Package} label="Total Equipment" value={equipments.length} sub={`${equipmentAvailable} available`} color="slate" />
-            <StatCard icon={Users} label="Total Users" value={uniqueUserIds.size} sub="who have rented" color="slate" />
+            <StatCard icon={Calendar} label="ยืมวันนี้" value={todayRentals.length} sub={`${todayUniqueUsers} ผู้ใช้`} color="slate" />
+            <StatCard icon={Activity} label="กำลังยืม" value={activeRentals.length} sub="รอดำเนินการ" color="slate" />
+            <StatCard icon={Package} label="อุปกรณ์ทั้งหมด" value={equipments.length} sub={`${equipmentAvailable} ว่าง`} color="slate" />
+            <StatCard icon={Users} label="ผู้ใช้ทั้งหมด" value={uniqueUserIds.size} sub="ที่เคยยืม" color="slate" />
         </div>
     );
 }

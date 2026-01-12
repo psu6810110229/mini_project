@@ -20,13 +20,13 @@ export default function EquipmentFilter({
                 {/* Search Input */}
                 <div className="group">
                     <label className="block text-sm font-semibold text-white mb-2">
-                        <Search className="inline w-4 h-4 mr-1" />Search Name
+                        <Search className="inline w-4 h-4 mr-1" />ค้นหา
                     </label>
                     <input
                         type="text"
                         value={searchName}
                         onChange={(e) => setSearchName(e.target.value)}
-                        placeholder="Search by name..."
+                        placeholder="พิมพ์ชื่ออุปกรณ์..."
                         className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                     />
                 </div>
@@ -34,7 +34,7 @@ export default function EquipmentFilter({
                 {/* Category Filter Dropdown */}
                 <div className="group">
                     <label className="block text-sm font-semibold text-white mb-2">
-                        <Tag className="inline w-4 h-4 mr-1" />Category
+                        <Tag className="inline w-4 h-4 mr-1" />หมวดหมู่
                     </label>
                     <div className="relative">
                         <button
@@ -43,7 +43,7 @@ export default function EquipmentFilter({
                             className="w-full backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-left text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 flex items-center justify-between"
                         >
                             <span className={filterCategories.length > 0 ? 'text-white' : 'text-white/40'}>
-                                {filterCategories.length > 0 ? `${filterCategories.length} selected` : 'All Categories'}
+                                {filterCategories.length > 0 ? `เลือก ${filterCategories.length} หมวด` : 'ทุกหมวด'}
                             </span>
                             <svg className={`w-4 h-4 text-white/60 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -57,7 +57,7 @@ export default function EquipmentFilter({
                                         onClick={() => setFilterCategories([])}
                                         className="w-full p-3 text-left text-sm text-blue-400 hover:bg-white/10 border-b border-white/10"
                                     >
-                                        Clear all
+                                        ล้าง
                                     </button>
                                 )}
                                 {categories.map(cat => (

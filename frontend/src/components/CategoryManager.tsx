@@ -42,14 +42,12 @@ export default function CategoryManager({ isOpen, onClose, categories, onCategor
     const handleAddCategory = () => {
         const trimmed = newCategory.trim();
         if (!trimmed) {
-            setError('Category name is required');
-            return;
+            setError('กรอกชื่อหมวดก่อน');
         }
 
         // Check for duplicates (case-insensitive)
         if (categories.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
-            setError('This category already exists');
-            return;
+            setError('มีหมวดนี้อยู่แล้ว');
         }
 
         const updated = [...categories, trimmed].sort((a, b) => a.localeCompare(b));
@@ -79,8 +77,8 @@ export default function CategoryManager({ isOpen, onClose, categories, onCategor
                             <Tag className="w-5 h-5 text-blue-400" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-white">Manage Categories</h2>
-                            <p className="text-sm text-white/50">{categories.length} categories</p>
+                            <h2 className="text-xl font-bold text-white">จัดการหมวดหมู่</h2>
+                            <p className="text-sm text-white/50">มี {categories.length} หมวด</p>
                         </div>
                     </div>
                     <button
@@ -93,7 +91,7 @@ export default function CategoryManager({ isOpen, onClose, categories, onCategor
 
                 {/* Add new category */}
                 <div className="p-6 border-b border-white/10">
-                    <label className="block text-sm font-semibold text-white mb-2">Add New Category</label>
+                    <label className="block text-sm font-semibold text-white mb-2">เพิ่มหมวดใหม่</label>
                     <div className="flex gap-2">
                         <input
                             type="text"
@@ -103,7 +101,7 @@ export default function CategoryManager({ isOpen, onClose, categories, onCategor
                                 setError('');
                             }}
                             onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
-                            placeholder="e.g., Camera, Microphone, Tripod"
+                            placeholder="เช่น Camera, Lens..."
                             className="flex-1 backdrop-blur-xl bg-slate-800/60 border border-white/20 rounded-xl py-3 px-4 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                         />
                         <button
@@ -111,7 +109,7 @@ export default function CategoryManager({ isOpen, onClose, categories, onCategor
                             className="px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold transition-all duration-200 flex items-center gap-2"
                         >
                             <Plus className="w-4 h-4" />
-                            Add
+                            เพิ่ม
                         </button>
                     </div>
                     {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
@@ -122,8 +120,8 @@ export default function CategoryManager({ isOpen, onClose, categories, onCategor
                     {categories.length === 0 ? (
                         <div className="text-center py-8">
                             <Tag className="w-12 h-12 mx-auto mb-3 text-white/30" />
-                            <p className="text-white/50">No categories yet</p>
-                            <p className="text-white/30 text-sm">Add your first category above</p>
+                            <p className="text-white/50">ยังไม่มีหมวด</p>
+                            <p className="text-white/30 text-sm">เพิ่มหมวดแรกได้เลย</p>
                         </div>
                     ) : (
                         <div className="space-y-2">
@@ -154,7 +152,7 @@ export default function CategoryManager({ isOpen, onClose, categories, onCategor
                         onClick={onClose}
                         className="w-full px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-all duration-200 border border-white/20"
                     >
-                        Done
+                        เสร็จ
                     </button>
                 </div>
 
@@ -166,24 +164,24 @@ export default function CategoryManager({ isOpen, onClose, categories, onCategor
                                 <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-red-500/20 flex items-center justify-center">
                                     <AlertTriangle className="w-6 h-6 text-red-400" />
                                 </div>
-                                <h3 className="text-lg font-bold text-white mb-1">Delete Category?</h3>
+                                <h3 className="text-lg font-bold text-white mb-1">ลบหมวดนี้?</h3>
                                 <p className="text-white/60 text-sm">
-                                    Delete "<span className="text-white font-medium">{showDeleteConfirm}</span>"?
+                                    ลบ "<span className="text-white font-medium">{showDeleteConfirm}</span>" หรือไม่?
                                 </p>
-                                <p className="text-amber-400/80 text-xs mt-2">Existing equipment will keep this category.</p>
+                                <p className="text-amber-400/80 text-xs mt-2">อุปกรณ์ที่มีอยู่จะยังคงหมวดนี้</p>
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setShowDeleteConfirm(null)}
                                     className="flex-1 px-3 py-2 rounded-xl text-white bg-white/10 hover:bg-white/20 transition-all"
                                 >
-                                    Cancel
+                                    ยกเลิก
                                 </button>
                                 <button
                                     onClick={() => handleDeleteCategory(showDeleteConfirm)}
                                     className="flex-1 px-3 py-2 rounded-xl text-white bg-red-500 hover:bg-red-600 transition-all font-medium"
                                 >
-                                    Delete
+                                    ลบ
                                 </button>
                             </div>
                         </div>

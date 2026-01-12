@@ -8,7 +8,16 @@ interface EquipmentGridProps {
 }
 
 export default function EquipmentGrid({ equipments }: EquipmentGridProps) {
-    const getAvailableCount = (equipment: Equipment) => equipment.items?.filter(i => i.status === EquipmentItemStatus.AVAILABLE).length || equipment.stockQty;
+    const getAvailableCount = (equipment: Equipment) => {
+        // If equipment-level status is not AVAILABLE, show 0
+        if (equipment.status !== 'AVAILABLE') return 0;
+        // If items array exists, count available items (can be 0 if all unavailable)
+        if (equipment.items && equipment.items.length > 0) {
+            return equipment.items.filter(i => i.status === EquipmentItemStatus.AVAILABLE).length;
+        }
+        // Fallback to stockQty only if no items array
+        return equipment.stockQty;
+    };
     const getTotalCount = (equipment: Equipment) => equipment.items?.length || equipment.stockQty;
 
     return (
@@ -35,9 +44,9 @@ export default function EquipmentGrid({ equipments }: EquipmentGridProps) {
                             <p className="text-white/70 text-sm mb-4">{item.category}</p>
                             <div className="flex justify-between items-center text-sm">
                                 <span className={`font-bold ${availableCount > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                    {availableCount}/{totalCount} available
+                                    {availableCount}/{totalCount} ว่าง
                                 </span>
-                                <span className="text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all font-medium">View Details →</span>
+                                <span className="text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all font-medium">ดูรายละเอียด ›</span>
                             </div>
                         </div>
                     </Link>

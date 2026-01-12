@@ -97,10 +97,10 @@ export default function AdminRentals() {
         if (!confirmAction) return;
         try {
             const response = await apiClient.patch<{ autoRejectedRentals?: string[] }>(`/rentals/${confirmAction.id}/status`, { status: confirmAction.status });
-            let msg = `Status updated to ${confirmAction.status} successfully`;
-            if (response.data.autoRejectedRentals?.length) msg += `. Auto-rejected ${response.data.autoRejectedRentals.length} overlapping request(s)`;
+            let msg = `อัปเดตสถานะเป็น ${confirmAction.status} สำเร็จ`;
+            if (response.data.autoRejectedRentals?.length) msg += `. ปฏิเสธอัตโนมัติ ${response.data.autoRejectedRentals.length} รายการที่ซ้อน`;
             setSuccessMessage(msg); fetchRentals(); setTimeout(() => setSuccessMessage(''), 5000);
-        } catch { alert('Failed to update status'); }
+        } catch { alert('อัปเดตสถานะไม่สำเร็จ'); }
         setShowConfirmModal(false); setConfirmAction(null);
     };
 
@@ -113,10 +113,10 @@ export default function AdminRentals() {
             const body: { status: string; rejectReason?: string } = { status: 'REJECTED' };
             if (rejectNote.trim()) body.rejectReason = rejectNote.trim();
             await apiClient.patch(`/rentals/${rejectingRental.id}/status`, body);
-            setSuccessMessage(`Rejected request from ${rejectingRental.userName}`);
+            setSuccessMessage(`ปฏิเสธคำขอจาก ${rejectingRental.userName} แล้ว`);
             fetchRentals(); setShowRejectModal(false); setRejectingRental(null); setRejectNote('');
             setTimeout(() => setSuccessMessage(''), 3000);
-        } catch { setSuccessMessage('Failed to reject rental.'); setTimeout(() => setSuccessMessage(''), 3000); }
+        } catch { setSuccessMessage('ปฏิเสธไม่สำเร็จ'); setTimeout(() => setSuccessMessage(''), 3000); }
         finally { setRejectLoading(false); }
     };
 
@@ -139,11 +139,11 @@ export default function AdminRentals() {
                 await apiClient.patch(`/rentals/${ids[i]}/status`, body);
                 setBatchProgress(prev => ({ ...prev, current: i + 1 }));
             } catch (err: any) {
-                errors.push(`${rentals.find(r => r.id === ids[i])?.user?.name || 'Unknown'}: ${err.response?.data?.message || 'Failed'}`);
+                errors.push(`${rentals.find(r => r.id === ids[i])?.user?.name || 'ไม่ทราบ'}: ${err.response?.data?.message || 'ไม่สำเร็จ'}`);
             }
         }
         setBatchProgress(prev => ({ ...prev, errors })); fetchRentals(); clearSelection(); setBatchProcessing(false);
-        if (errors.length === 0) { setShowBatchModal(false); setSuccessMessage(`Successfully processed ${ids.length} rentals`); setTimeout(() => setSuccessMessage(''), 3000); }
+        if (errors.length === 0) { setShowBatchModal(false); setSuccessMessage(`ดำเนินการสำเร็จ ${ids.length} รายการ`); setTimeout(() => setSuccessMessage(''), 3000); }
     };
 
     const getSelectedByStatus = () => {
@@ -159,7 +159,7 @@ export default function AdminRentals() {
     const currentRental = confirmAction ? rentals.find(r => r.id === confirmAction.id) : null;
     const overlappingPending = confirmAction?.status === 'APPROVED' && currentRental ? rentals.filter(r => r.id !== confirmAction.id && r.status === 'PENDING' && r.equipmentItemId === currentRental.equipmentItemId && isOverlapping(new Date(r.startDate), new Date(r.endDate), new Date(currentRental.startDate), new Date(currentRental.endDate))) : [];
 
-    if (loading) return <LoadingSpinner message="Loading rentals..." />;
+    if (loading) return <LoadingSpinner message="กำลังโหลดรายการยืม..." />;
 
     const { PENDING, APPROVED, CHECKED_OUT } = getSelectedByStatus();
 
@@ -167,7 +167,7 @@ export default function AdminRentals() {
         <div className="p-4 md:p-8 max-w-7xl mx-auto">
             {successMessage && (<div className="mb-6 flex gap-3 backdrop-blur-2xl bg-green-900/50 border border-green-500/30 rounded-xl p-4 shadow-lg animate-fade-in"><CheckCircle className="h-5 w-5 text-green-300 flex-shrink-0 mt-0.5" /><p className="text-green-200 font-semibold">{successMessage}</p></div>)}
 
-            <div className="flex items-center gap-3 mb-6"><ClipboardList className="w-8 h-8 text-white" /><h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>Manage Rentals</h1></div>
+            <div className="flex items-center gap-3 mb-6"><ClipboardList className="w-8 h-8 text-white" /><h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>จัดการรายการยืม</h1></div>
 
             <RentalsFilterBar
                 activeTab={activeTab} setActiveTab={setActiveTab}
@@ -193,7 +193,7 @@ export default function AdminRentals() {
                         onApprove={(id, name) => showConfirmation(id, 'APPROVED', name)} onReject={handleRejectClick}
                         onCheckout={(id, name) => showConfirmation(id, 'CHECKED_OUT', name)} onReturn={(id, name) => showConfirmation(id, 'RETURNED', name)} />
                 ))}
-                {filteredRentals.length === 0 && <EmptyState icon={ClipboardList} message="No rental requests found for this filter." />}
+                {filteredRentals.length === 0 && <EmptyState icon={ClipboardList} message="ไม่พบรายการยืมตามตัวกรองนี้" />}
             </div>
 
             <RentalDetailModal rental={selectedRental} isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} onApprove={(id, name) => showConfirmation(id, 'APPROVED', name)} onReject={(id, name) => showConfirmation(id, 'REJECTED', name)} />

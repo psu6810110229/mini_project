@@ -33,7 +33,7 @@ export default function EquipmentCard({ equipment, linkTo }: EquipmentCardProps)
                         }}
                     />
                 ) : (
-                    <span className="text-gray-500">No Image</span>
+                    <span className="text-gray-500">ไม่มีรูป</span>
                 )}
             </div>
 
@@ -45,11 +45,11 @@ export default function EquipmentCard({ equipment, linkTo }: EquipmentCardProps)
                     </span>
                 </div>
 
-                <p className="text-gray-400 text-sm mb-4">{equipment.category || 'Uncategorized'}</p>
+                <p className="text-gray-400 text-sm mb-4">{equipment.category || 'ไม่มีหมวด'}</p>
 
                 <div className="flex justify-between items-center text-sm text-gray-400">
-                    <span>Stock: {equipment.stockQty}</span>
-                    {linkTo && <span className="text-blue-400">View Details →</span>}
+                    <span>จำนวน: {equipment.stockQty}</span>
+                    {linkTo && <span className="text-blue-400">ดูรายละเอียด ›</span>}
                 </div>
             </div>
         </>

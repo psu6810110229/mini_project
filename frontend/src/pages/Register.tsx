@@ -21,11 +21,11 @@ const Register = () => {
 
     try {
       await apiClient.post('/auth/register', formData);
-      alert('Registration successful! Please login.');
+      alert('สมัครสำเร็จ! กรุณาเข้าสู่ระบบ');
       navigate('/login');
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || 'สมัครไม่สำเร็จ');
     } finally {
       setLoading(false);
     }
@@ -61,10 +61,10 @@ const Register = () => {
 
           {/* Title */}
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-2 text-white tracking-tight">
-            Create Account
+            สร้างบัญชีใหม่
           </h2>
           <p className="text-center text-white/70 mb-8 text-sm">
-            Join us to start renting equipment
+            สมัครเพื่อเริ่มยืมอุปกรณ์
           </p>
 
           {/* Error Message */}
@@ -78,7 +78,7 @@ const Register = () => {
             {/* Student ID Field */}
             <div>
               <label className="block text-sm font-medium text-white/80 mb-2">
-                Student ID
+                รหัสนักศึกษา
               </label>
               <div className="relative group">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 group-focus-within:text-white/80 transition-colors" />
@@ -96,7 +96,7 @@ const Register = () => {
             {/* Full Name Field */}
             <div>
               <label className="block text-sm font-medium text-white/80 mb-2">
-                Full Name
+                ชื่อ-นามสกุล
               </label>
               <div className="relative group">
                 <IdCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 group-focus-within:text-white/80 transition-colors" />
@@ -114,7 +114,7 @@ const Register = () => {
             {/* Password Field */}
             <div>
               <label className="block text-sm font-medium text-white/80 mb-2">
-                Password
+                รหัสผ่าน
               </label>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50 group-focus-within:text-white/80 transition-colors" />
@@ -148,12 +148,12 @@ const Register = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Creating...
+                  กำลังสร้างบัญชี...
                 </div>
               ) : (
                 <>
                   <UserPlus size={18} />
-                  Create Account
+                  สมัครสมาชิก
                 </>
               )}
             </button>
@@ -162,18 +162,18 @@ const Register = () => {
           {/* Divider */}
           <div className="flex items-center my-6">
             <div className="flex-1 border-t border-white/20"></div>
-            <span className="px-4 text-white/50 text-sm">Or</span>
+            <span className="px-4 text-white/50 text-sm">หรือ</span>
             <div className="flex-1 border-t border-white/20"></div>
           </div>
 
           {/* Login Link */}
           <p className="text-center text-white/70 text-sm">
-            Already have an account?{' '}
+            มีบัญชีอยู่แล้ว?{' '}
             <Link
               to="/login"
               className="text-white font-semibold hover:underline transition-all"
             >
-              Log In
+              เข้าสู่ระบบ
             </Link>
           </p>
         </div>
