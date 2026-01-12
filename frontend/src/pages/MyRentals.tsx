@@ -6,6 +6,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import EmptyState from '../components/ui/EmptyState';
 import RentalItemCard from '../components/rentals/RentalItemCard';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import UploadEvidenceModal from '../components/rentals/UploadEvidenceModal';
 
 type TabType = 'active' | 'history';
 type ActiveStatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'CHECKED_OUT';
@@ -18,9 +19,15 @@ export default function MyRentals() {
     const [activeTab, setActiveTab] = useState<TabType>('active');
     const [activeStatusFilter, setActiveStatusFilter] = useState<ActiveStatusFilter>('ALL');
     const [historyStatusFilter, setHistoryStatusFilter] = useState<HistoryStatusFilter>('ALL');
+
+    // Modal states
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [cancellingRental, setCancellingRental] = useState<{ id: string; name: string } | null>(null);
     const [cancelLoading, setCancelLoading] = useState(false);
+
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [uploadRental, setUploadRental] = useState<{ id: string; type: 'checkout' | 'return' } | null>(null);
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => { fetchMyRentals(); }, []);
 
@@ -40,11 +47,23 @@ export default function MyRentals() {
         try {
             await apiClient.patch(`/rentals/${cancellingRental.id}/status`, { status: 'CANCELLED' });
             await fetchMyRentals();
-            setShowCancelModal(false); setCancellingRental(null);
+            setShowCancelModal(false); setCancellingRental(null); setSuccessMessage('Rental cancelled successfully');
         } catch (err: any) {
             const msg = err.response?.data?.message || 'Failed to cancel';
             setError(msg.includes('CHECKED_OUT') ? 'You have already picked up this equipment.' : msg);
         } finally { setCancelLoading(false); }
+    };
+
+    const handleUploadClick = (rental: Rental) => {
+        const type = rental.status === 'APPROVED' ? 'checkout' : 'return';
+        setUploadRental({ id: rental.id, type });
+        setShowUploadModal(true);
+    };
+
+    const handleUploadSuccess = () => {
+        fetchMyRentals();
+        setSuccessMessage('Evidence uploaded successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
     };
 
     const activeStatuses = ['PENDING', 'APPROVED', 'CHECKED_OUT'];
@@ -76,6 +95,13 @@ export default function MyRentals() {
     return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto">
             <div className="flex items-center gap-3 mb-6"><History className="w-8 h-8 text-white" /><h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>My Rentals</h1></div>
+
+            {successMessage && (
+                <div className="mb-6 flex gap-3 backdrop-blur-2xl bg-green-900/50 border border-green-500/30 rounded-xl p-4 shadow-lg animate-fade-in">
+                    <CheckCircle className="h-5 w-5 text-green-300 flex-shrink-0 mt-0.5" />
+                    <p className="text-green-200 font-semibold">{successMessage}</p>
+                </div>
+            )}
 
             {error && (
                 <div className="backdrop-blur-2xl bg-red-900/50 rounded-xl p-4 border border-red-500/30 mb-6 flex items-center gap-3">
@@ -109,13 +135,30 @@ export default function MyRentals() {
                 <EmptyState icon={activeTab === 'active' ? Activity : Archive} message={activeTab === 'active' ? "No active rentals. You don't have any pending or active requests." : "No rental history. Your completed rentals will appear here."} />
             ) : (
                 <div className="space-y-4">
-                    {displayedRentals.map(rental => <RentalItemCard key={rental.id} rental={rental} onCancel={handleCancelClick} />)}
+                    {displayedRentals.map(rental => (
+                        <RentalItemCard
+                            key={rental.id}
+                            rental={rental}
+                            onCancel={handleCancelClick}
+                            onUpload={handleUploadClick}
+                        />
+                    ))}
                 </div>
             )}
 
             <ConfirmModal isOpen={showCancelModal} title="Cancel Rental Request" message={`Cancel your request for ${cancellingRental?.name}?`} variant="danger" confirmLabel="Cancel Request" cancelLabel="Keep Request" onConfirm={handleConfirmCancel} onCancel={() => { setShowCancelModal(false); setCancellingRental(null); }} loading={cancelLoading}>
                 <p className="text-amber-400/80 text-sm mt-2">This action cannot be undone.</p>
             </ConfirmModal>
+
+            {uploadRental && (
+                <UploadEvidenceModal
+                    isOpen={showUploadModal}
+                    rentalId={uploadRental.id}
+                    imageType={uploadRental.type}
+                    onClose={() => setShowUploadModal(false)}
+                    onSuccess={handleUploadSuccess}
+                />
+            )}
         </div>
     );
 }

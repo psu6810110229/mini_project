@@ -1,9 +1,10 @@
-import { Package, Calendar, Clock, FileText, Ban, AlertTriangle } from 'lucide-react';
+import { Package, Calendar, Clock, FileText, Ban, AlertTriangle, Camera, CheckCircle } from 'lucide-react';
 import type { Rental } from '../../types';
 
 interface RentalItemCardProps {
     rental: Rental;
     onCancel?: (id: string, name: string) => void;
+    onUpload?: (rental: Rental) => void;
 }
 
 const getStatusInfo = (status: string) => {
@@ -30,10 +31,16 @@ const getDaysRemaining = (endDate: string, status: string) => {
 };
 
 const canCancel = (status: string) => ['PENDING', 'APPROVED'].includes(status);
+const canUpload = (status: string) => ['APPROVED', 'CHECKED_OUT'].includes(status);
 
-export default function RentalItemCard({ rental, onCancel }: RentalItemCardProps) {
+/**
+ * Individual rental card displayed on the "My Rentals" page.
+ * Shows status-specific actions (Cancel, Upload Evidence) and photo upload badges.
+ */
+export default function RentalItemCard({ rental, onCancel, onUpload }: RentalItemCardProps) {
     const st = getStatusInfo(rental.status);
     const days = getDaysRemaining(rental.endDate, rental.status);
+
 
     return (
         <div className={`backdrop-blur-2xl bg-slate-900/60 rounded-2xl border overflow-hidden shadow-xl transition-all hover:bg-slate-800/60 ${st.bgColor}`}>
@@ -71,10 +78,33 @@ export default function RentalItemCard({ rental, onCancel }: RentalItemCardProps
 
                     <div className="flex flex-wrap items-center gap-3">
                         {days && <div className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium ${days.color} ${days.bgColor}`}>⏰ {days.text}</div>}
+
+                        {/* Cancel Button */}
                         {onCancel && canCancel(rental.status) && (
                             <button onClick={() => onCancel(rental.id, rental.equipment?.name || 'Unknown')} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 text-sm font-medium transition-all border border-red-500/30 hover:border-red-500/50">
                                 <Ban className="w-3.5 h-3.5" /> Cancel Request
                             </button>
+                        )}
+
+                        {/* Upload Evidence Button */}
+                        {onUpload && canUpload(rental.status) && (
+                            <button onClick={() => onUpload(rental)} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 hover:text-blue-300 text-sm font-medium transition-all border border-blue-500/30 hover:border-blue-500/50">
+                                <Camera className="w-3.5 h-3.5" />
+                                {rental.status === 'APPROVED' ? 'Upload Pickup Photo' : 'Upload Return Photo'}
+                            </button>
+                        )}
+
+                        {/* Pickup Evidence Badge */}
+                        {rental.checkoutImageUrl && (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded-lg border border-blue-500/20">
+                                <CheckCircle className="w-3 h-3" /> <span>Pickup Photo</span>
+                            </span>
+                        )}
+                        {/* Return Evidence Badge */}
+                        {rental.returnImageUrl && (
+                            <span className="inline-flex items-center gap-1.5 text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/20">
+                                <CheckCircle className="w-3 h-3" /> <span>Return Photo</span>
+                            </span>
                         )}
                     </div>
 

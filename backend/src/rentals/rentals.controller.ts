@@ -7,8 +7,15 @@ import {
     Param,
     UseGuards,
     ParseUUIDPipe,
+    UseInterceptors,
+    UploadedFile,
+    BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { RentalsService } from './rentals.service';
 import { CreateRentalDto } from './dto/create-rental.dto';
 import { UpdateRentalStatusDto } from './dto/update-rental-status.dto';
@@ -16,6 +23,9 @@ import { CheckOverlapDto } from './dto/check-overlap.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
+
+// Ensure uploads directory exists
+const uploadsDir = join(process.cwd(), 'uploads');
 
 @ApiTags('Rentals')
 @Controller('rentals')
@@ -123,15 +133,47 @@ export class RentalsController {
      * Upload checkout or return image for a rental
      * @param imageType - 'checkout' or 'return'
      */
-    @Patch(':id/upload-image')
+    @Post(':id/upload-image')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
+    @UseInterceptors(FileInterceptor('image', {
+        storage: diskStorage({
+            destination: uploadsDir,
+            filename: (_req: any, file: Express.Multer.File, callback: (error: Error | null, filename: string) => void) => {
+                const uniqueName = `${uuidv4()}${extname(file.originalname)}`;
+                callback(null, uniqueName);
+            },
+        }),
+        fileFilter: (_req: any, file: Express.Multer.File, callback: any) => {
+            if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+                return callback(new BadRequestException('Only image files are allowed!'), false);
+            }
+            callback(null, true);
+        },
+        limits: {
+            fileSize: 5 * 1024 * 1024, // 5MB limit
+        },
+    }))
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                image: { type: 'string', format: 'binary' },
+                imageType: { type: 'string', enum: ['checkout', 'return'] },
+                note: { type: 'string' },
+            },
+        },
+    })
     @ApiOperation({ summary: 'Upload checkout/return image for a rental' })
     async uploadImage(
         @Param('id', ParseUUIDPipe) id: string,
-        @Body() body: { imageType: 'checkout' | 'return'; imageUrl: string; note?: string },
+        @UploadedFile() file: Express.Multer.File,
+        @Body() body: { imageType: 'checkout' | 'return'; note?: string },
     ) {
-        return this.rentalsService.uploadImage(id, body.imageType, body.imageUrl, body.note);
+        if (!file) throw new BadRequestException('No file uploaded');
+        const imageUrl = `/api/equipments/images/${file.filename}`; // Reuse equipments image path
+        return this.rentalsService.uploadImage(id, body.imageType, imageUrl, body.note);
     }
 }
 

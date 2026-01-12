@@ -1,4 +1,4 @@
-import { Package, X, FileText, CheckCircle, AlertTriangle, AlertOctagon, Loader } from 'lucide-react';
+import { Package, X, FileText, CheckCircle, AlertTriangle, AlertOctagon, Loader, Camera } from 'lucide-react';
 import type { Rental } from '../../types';
 import { getStatusColor, getStatusLabel, getActionLabel } from '../../utils/statusHelpers';
 
@@ -11,62 +11,132 @@ interface DetailModalProps {
     onReject: (id: string, userName: string) => void;
 }
 
+/**
+ * Modal to display comprehensive information about a specific rental request.
+ * Includes equipment details, requester information, rental duration, and uploaded evidence photos.
+ */
 export function RentalDetailModal({ rental, isOpen, onClose, onApprove, onReject }: DetailModalProps) {
     if (!isOpen || !rental) return null;
+
+    // Calculate total days for the duration display
     const duration = Math.ceil((new Date(rental.endDate).getTime() - new Date(rental.startDate).getTime()) / (1000 * 60 * 60 * 24));
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fade-in" onClick={onClose} />
-            <div className="relative backdrop-blur-2xl bg-gradient-to-b from-slate-800/95 to-slate-900/95 rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-scale-in border border-white/20">
-                <div className="relative h-48 bg-white flex items-center justify-center">
-                    {rental.equipment?.imageUrl ? (
-                        <img src={rental.equipment.imageUrl} alt={rental.equipment.name} className="w-full h-full object-contain p-6" />
-                    ) : (
-                        <Package className="w-20 h-20 text-gray-400" />
-                    )}
-                    <button onClick={onClose} className="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full"><X className="w-5 h-5" /></button>
-                    <span className={`absolute bottom-3 right-3 px-3 py-1.5 rounded-full text-sm font-bold ${getStatusColor(rental.status)}`}>{getStatusLabel(rental.status)}</span>
-                </div>
-                <div className="p-6">
-                    <h2 className="text-2xl font-bold text-white mb-1">{rental.equipment?.name}</h2>
-                    {rental.equipmentItem?.itemCode && <p className="text-white/60 text-sm mb-4">Item Code: {rental.equipmentItem.itemCode}</p>}
-                    <div className="space-y-4">
-                        <div className="backdrop-blur-xl bg-white/5 rounded-xl p-4 border border-white/10">
-                            <h3 className="text-sm font-semibold text-white/60 mb-2">Requester</h3>
-                            <div className="text-white font-bold text-lg">{rental.user?.name || 'Unknown'}</div>
-                            <div className="text-white/60 text-sm">Student ID: {rental.user?.studentId}</div>
-                        </div>
-                        <div className="backdrop-blur-xl bg-white/5 rounded-xl p-4 border border-white/10">
-                            <h3 className="text-sm font-semibold text-white/60 mb-2">Rental Duration</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <div className="text-xs text-white/50">Start Date</div>
-                                    <div className="text-white font-medium">{new Date(rental.startDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                                </div>
-                                <div>
-                                    <div className="text-xs text-white/50">End Date</div>
-                                    <div className="text-white font-medium">{new Date(rental.endDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                                </div>
-                            </div>
-                            <div className="mt-3 pt-3 border-t border-white/10 text-center text-blue-400 font-medium text-sm">
-                                📅 Total: {duration} {duration === 1 ? 'day' : 'days'}
-                            </div>
-                        </div>
-                        <div className="backdrop-blur-xl bg-amber-900/20 rounded-xl p-4 border border-amber-500/30">
-                            <h3 className="text-sm font-semibold text-amber-400 mb-2 flex items-center gap-2"><FileText className="w-4 h-4" /> Request Details</h3>
-                            <p className="text-white/80 text-sm whitespace-pre-wrap">{rental.requestDetails || 'No additional details provided.'}</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-3 mt-6">
-                        <button onClick={onClose} className="flex-1 px-4 py-3 rounded-xl font-medium text-white bg-white/10 hover:bg-white/20 border border-white/20">Close</button>
-                        {rental.status === 'PENDING' && (
-                            <>
-                                <button onClick={() => { onClose(); onApprove(rental.id, rental.user?.name || ''); }} className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg">Approve</button>
-                                <button onClick={() => { onClose(); onReject(rental.id, rental.user?.name || ''); }} className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-lg">Reject</button>
-                            </>
+            <div className="relative backdrop-blur-2xl bg-slate-900/95 rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-scale-in border border-white/10 flex flex-col max-h-[85vh]">
+
+                {/* Header */}
+                <div className="flex items-start gap-4 p-5 border-b border-white/10 bg-white/5">
+                    <div className="w-20 h-20 bg-white rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden shadow-lg border border-white/10">
+                        {rental.equipment?.imageUrl ? (
+                            <img src={rental.equipment.imageUrl} alt={rental.equipment.name} className="w-full h-full object-contain p-2" />
+                        ) : (
+                            <Package className="w-10 h-10 text-gray-400" />
                         )}
                     </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-2">
+                            <div>
+                                <h2 className="text-lg font-bold text-white leading-tight truncate pr-2">{rental.equipment?.name}</h2>
+                                {rental.equipmentItem?.itemCode && (
+                                    <p className="text-white/50 text-xs mt-0.5 font-mono">Code: {rental.equipmentItem.itemCode}</p>
+                                )}
+                            </div>
+                            <span className={`flex-shrink-0 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg ${getStatusColor(rental.status)}`}>
+                                {getStatusLabel(rental.status)}
+                            </span>
+                        </div>
+                        <div className="mt-3 flex items-center gap-2 text-xs text-white/60 bg-black/20 w-fit px-2 py-1 rounded-md">
+                            <span className="text-blue-400 font-semibold">{duration} Day{duration !== 1 ? 's' : ''}</span>
+                            <span className="w-px h-3 bg-white/20"></span>
+                            <span>{new Date(rental.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - {new Date(rental.endDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="text-white/40 hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-1.5 rounded-lg">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                <div className="overflow-y-auto custom-scrollbar p-5 space-y-4">
+                    {/* Requester Info */}
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-inner">
+                                {rental.user?.name?.charAt(0) || '?'}
+                            </div>
+                            <div>
+                                <div className="text-sm font-bold text-white">{rental.user?.name || 'Unknown'}</div>
+                                <div className="text-xs text-white/50">{rental.user?.studentId}</div>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-[10px] text-white/40 uppercase tracking-wide mb-0.5">Contact</div>
+                            <div className="text-xs text-white/80">Student</div>
+                        </div>
+                    </div>
+
+                    {/* Request Details */}
+                    {rental.requestDetails && (
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-white/50 flex items-center gap-1.5">
+                                <FileText className="w-3.5 h-3.5" /> Request Note
+                            </label>
+                            <div className="p-3 bg-amber-500/5 border border-amber-500/10 rounded-xl text-sm text-white/80 leading-relaxed">
+                                {rental.requestDetails}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Review Evidence - Compact Grid */}
+                    {(rental.checkoutImageUrl || rental.returnImageUrl) && (
+                        <div className="space-y-2 pt-2 border-t border-white/10">
+                            <label className="text-xs font-semibold text-blue-400 flex items-center gap-1.5">
+                                <Camera className="w-3.5 h-3.5" /> Evidence
+                            </label>
+                            <div className="grid grid-cols-2 gap-3">
+                                {rental.checkoutImageUrl && (
+                                    <a href={rental.checkoutImageUrl} target="_blank" rel="noreferrer" className="group relative block rounded-lg overflow-hidden border border-white/10 bg-black/40 aspect-[4/3] hover:border-blue-500/50 transition-colors">
+                                        <div className="absolute top-2 left-2 z-10 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold text-white border border-white/10">PICKUP</div>
+                                        <img src={rental.checkoutImageUrl} alt="Pickup" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                        {rental.checkoutNote && (
+                                            <div className="absolute bottom-0 inset-x-0 bg-black/80 backdrop-blur-sm p-2">
+                                                <p className="text-[10px] text-white/90 truncate">"{rental.checkoutNote}"</p>
+                                            </div>
+                                        )}
+                                    </a>
+                                )}
+                                {rental.returnImageUrl && (
+                                    <a href={rental.returnImageUrl} target="_blank" rel="noreferrer" className="group relative block rounded-lg overflow-hidden border border-white/10 bg-black/40 aspect-[4/3] hover:border-green-500/50 transition-colors">
+                                        <div className="absolute top-2 left-2 z-10 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold text-white border border-white/10">RETURN</div>
+                                        <img src={rental.returnImageUrl} alt="Return" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                        {rental.returnNote && (
+                                            <div className="absolute bottom-0 inset-x-0 bg-black/80 backdrop-blur-sm p-2">
+                                                <p className="text-[10px] text-white/90 truncate">"{rental.returnNote}"</p>
+                                            </div>
+                                        )}
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer Actions */}
+                <div className="p-4 border-t border-white/10 bg-white/5 flex gap-3">
+                    <button onClick={onClose} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">
+                        Close
+                    </button>
+                    {rental.status === 'PENDING' && (
+                        <>
+                            <button onClick={() => { onClose(); onReject(rental.id, rental.user?.name || ''); }} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-rose-300 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/30 transition-colors">
+                                Reject
+                            </button>
+                            <button onClick={() => { onClose(); onApprove(rental.id, rental.user?.name || ''); }} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 shadow-lg shadow-green-500/20 transition-all">
+                                Approve
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
@@ -82,11 +152,15 @@ interface ConfirmModalProps {
     onCancel: () => void;
 }
 
+/**
+ * Simple confirmation modal used before performing critical actions like approving or rejecting.
+ * Shows a warning if there are overlapping pending requests that will be auto-rejected.
+ */
 export function ActionConfirmModal({ isOpen, action, overlappingPending, onConfirm, onCancel }: ConfirmModalProps) {
     if (!isOpen || !action) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fade-in" onClick={onCancel} />
             <div className="relative backdrop-blur-2xl bg-gradient-to-b from-slate-800/95 to-slate-900/95 rounded-3xl shadow-2xl max-w-md w-full mx-4 p-6 animate-scale-in border border-white/20">
                 <div className="text-center mb-6">
@@ -124,11 +198,15 @@ interface RejectModalProps {
     loading: boolean;
 }
 
+/**
+ * Specialized modal for rejecting a rental.
+ * Includes an optional text area for the admin to provide a reason for rejection.
+ */
 export function RejectModal({ isOpen, rental, note, onNoteChange, onConfirm, onCancel, loading }: RejectModalProps) {
     if (!isOpen || !rental) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fade-in" onClick={() => !loading && onCancel()} />
             <div className="relative backdrop-blur-2xl bg-gradient-to-b from-slate-800/95 to-slate-900/95 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-scale-in border border-white/20">
                 <div className="p-6 border-b border-white/10">
@@ -172,6 +250,10 @@ interface BatchModalProps {
     onClose: () => void;
 }
 
+/**
+ * Modal for performing actions on multiple selected rentals simultaneously.
+ * Displays progress and any errors encountered during the batch operation.
+ */
 export function BatchActionModal({ isOpen, action, selectedIds, rentals, processing, progress, rejectNote, onRejectNoteChange, onConfirm, onClose }: BatchModalProps) {
     if (!isOpen || !action) return null;
 
@@ -184,7 +266,7 @@ export function BatchActionModal({ isOpen, action, selectedIds, rentals, process
     const { label, bgClass, iconClass, btnClass } = actionConfig[action];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fade-in" onClick={() => !processing && onClose()} />
             <div className="relative backdrop-blur-2xl bg-gradient-to-b from-slate-800/95 to-slate-900/95 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-scale-in border border-white/20">
                 <div className="p-6 border-b border-white/10">
@@ -236,4 +318,3 @@ export function BatchActionModal({ isOpen, action, selectedIds, rentals, process
         </div>
     );
 }
-

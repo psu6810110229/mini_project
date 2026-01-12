@@ -20,6 +20,10 @@ export class RentalsService {
         private stockService: RentalStockService,
     ) { }
 
+    /**
+     * Creates a new rental request.
+     * Validates dates, item availability, and optionally checks for overlapping bookings.
+     */
     async create(userId: string, createRentalDto: CreateRentalDto): Promise<Rental> {
         const { equipmentId, equipmentItemId, startDate, endDate, requestDetails, attachmentUrl, allowOverlap } = createRentalDto;
         const start = new Date(startDate);
@@ -34,8 +38,10 @@ export class RentalsService {
             if (item.status !== EquipmentItemStatus.AVAILABLE) throw new BadRequestException('This item is not available for rental');
         }
 
+        // Check for existing pending requests for the same equipment and dates to prevent duplicates
         await this.handleDuplicateRequests(userId, equipmentId, start, end, equipmentItemId);
 
+        // If strict overlap prevention is enabled, check if the equipment/item is already booked by others
         if (!allowOverlap) {
             const hasOverlap = await this.validationService.checkOverlapExcludingUser(equipmentId, start, end, userId, equipmentItemId);
             if (hasOverlap) throw new BadRequestException('Equipment is already booked for this period');
@@ -67,6 +73,10 @@ export class RentalsService {
         }
     }
 
+    /**
+     * Updates the status of a rental (e.g., PENDING -> APPROVED).
+     * Handles complex side effects like item stock updates and auto-rejecting conflicting requests.
+     */
     async updateStatus(id: string, updateStatusDto: UpdateRentalStatusDto): Promise<Rental & { autoRejectedRentals?: string[] }> {
         const rental = await this.findOne(id);
         const { status: newStatus } = updateStatusDto;
@@ -78,6 +88,7 @@ export class RentalsService {
             autoRejectedRentals = await this.handleAutoRejection(rental);
         }
 
+        // Handle equipment stock quantity and item status (AVAILABLE/RENTED) based on the new status
         await this.stockService.handleStockUpdate(rental, newStatus);
 
         const previousStatus = rental.status;
@@ -91,6 +102,10 @@ export class RentalsService {
         return { ...savedRental, autoRejectedRentals: autoRejectedRentals.length > 0 ? autoRejectedRentals : undefined };
     }
 
+    /**
+     * Automatically rejects all other PENDING requests that overlap with the newly approved rental.
+     * This ensures that only one user can occupy a specific time slot for an item.
+     */
     private async handleAutoRejection(rental: Rental): Promise<string[]> {
         const overlappingRentals = await this.validationService.getOverlappingRentals(rental.equipmentId, rental.startDate, rental.endDate, rental.equipmentItemId);
         const rejectedNames: string[] = [];
