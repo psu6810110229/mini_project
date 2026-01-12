@@ -30,6 +30,7 @@
  *   />
  */
 import { AlertTriangle, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 // Props interface - TypeScript way to define component inputs
 interface ConfirmModalProps {
@@ -71,8 +72,9 @@ export default function ConfirmModal({
 
     // Fixed positioning - covers entire screen
     // z-[9999] = highest z-index so it appears above everything
-    return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    // Portal to body to ensure backdrop covers everything
+    return createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
             {/* Backdrop - semi-transparent background that closes modal on click */}
             {/* backdrop-blur-md on the backdrop itself for full page blur */}
             <div className="fixed inset-0 bg-black/70 backdrop-blur-md" onClick={onCancel} />
@@ -120,6 +122,7 @@ export default function ConfirmModal({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

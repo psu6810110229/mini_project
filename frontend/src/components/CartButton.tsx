@@ -102,8 +102,8 @@ export default function RentalListButton() {
                                     <div className="backdrop-blur-xl bg-blue-500/10 rounded-2xl p-5 border border-blue-500/20 space-y-4">
                                         <h3 className="font-semibold text-white flex items-center gap-2">ช่วงเวลายืม</h3>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <ThaiDateTimePicker label="เริ่ม" value={startDate} onChange={setStartDate} minDate={new Date()} />
-                                            <ThaiDateTimePicker label="สิ้นสุด" value={endDate} onChange={setEndDate} minDate={startDate ? new Date(startDate) : undefined} />
+                                            <ThaiDateTimePicker label="เริ่ม" value={startDate} onChange={setStartDate} />
+                                            <ThaiDateTimePicker label="สิ้นสุด" value={endDate} onChange={setEndDate} />
                                         </div>
                                     </div>
                                     <div className="backdrop-blur-xl bg-amber-500/10 rounded-2xl p-5 border border-amber-500/20 space-y-3">
