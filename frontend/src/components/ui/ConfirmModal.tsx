@@ -49,8 +49,8 @@ export default function ConfirmModal({
     isOpen,
     title,
     message,
-    confirmLabel = 'Confirm',
-    cancelLabel = 'Cancel',
+    confirmLabel = 'ยืนยัน',
+    cancelLabel = 'ยกเลิก',
     variant = 'warning',
     onConfirm,
     onCancel,
@@ -69,13 +69,13 @@ export default function ConfirmModal({
         success: 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700',
     };
 
+    // Fixed positioning - covers entire screen
+    // z-[9999] = highest z-index so it appears above everything
     return (
-        // Fixed positioning - covers entire screen
-        // z-50 = high z-index so it appears above everything
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             {/* Backdrop - semi-transparent background that closes modal on click */}
-            {/* animate-fade-in - defined in index.css for smooth appearance */}
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-md animate-fade-in" onClick={onCancel} />
+            {/* backdrop-blur-md on the backdrop itself for full page blur */}
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-md" onClick={onCancel} />
 
             {/* Modal card - relative so it appears above the backdrop */}
             <div className="relative backdrop-blur-2xl bg-gradient-to-b from-slate-800/95 to-slate-900/95 rounded-3xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-scale-in border border-white/20">
