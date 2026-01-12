@@ -39,9 +39,9 @@ export default function Navbar() {
                     <div className="flex items-center justify-between h-16">
                         <div className="flex items-center gap-8">
                             <Link to={isAdmin ? "/admin/rentals" : "/equipments"} className="flex flex-col font-bold leading-tight hover:opacity-80 transition-opacity">
-                                <span className="text-lg text-white">🎓 University Club Gear</span>
+                                <span className="text-lg text-white">🎓 Photo Club</span>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-white/70">{isAdmin ? "Admin Panel" : "Rental System"}</span>
+                                    <span className="text-xs text-white/70">{isAdmin ? "Admin Panel" : " Gear Rental System"}</span>
                                     <span className="px-1.5 py-0.5 bg-white/20 text-white text-[10px] rounded-full font-bold border border-white/30">V.1.4</span>
                                 </div>
                             </Link>
