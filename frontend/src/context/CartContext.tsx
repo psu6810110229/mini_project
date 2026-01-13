@@ -64,7 +64,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
     }, [cartItems]);
 
-    // ===================== TIMER LOGIC (สำคัญมาก!) =====================
+    // ===================== TIMER LOGIC =====================
     // ระบบตรวจสอบของหมดอายุ - ทำงานทุก 1 วินาที
     // เหตุผล: ถ้าคนกั๊กของไว้นานเกินไป ของจะถูกปลดปล่อยให้คนอื่นจองได้
     useEffect(() => {

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../../users/entities/user.entity';
 import { UserSeeder } from './user.seeder';
@@ -8,4 +8,11 @@ import { UserSeeder } from './user.seeder';
   providers: [UserSeeder],
   exports: [UserSeeder],
 })
-export class SeedsModule {}
+export class SeedsModule implements OnModuleInit {
+  constructor(private readonly userSeeder: UserSeeder) { }
+
+  async onModuleInit() {
+    // Auto-run seeder when app starts
+    await this.userSeeder.seed();
+  }
+}
