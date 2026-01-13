@@ -18,8 +18,15 @@ export default function DashboardStatCards({ rentals, equipments }: StatCardsPro
     // Active rentals (not returned/rejected/cancelled)
     const activeRentals = rentals.filter(r => ['PENDING', 'APPROVED', 'CHECKED_OUT'].includes(r.status));
 
-    // Equipment Status
-    const equipmentAvailable = equipments.filter(e => e.status === 'AVAILABLE').length;
+    // Equipment Status - count equipments that have at least 1 available item
+    const equipmentAvailable = equipments.filter(e => {
+        // If equipment has items, check if any item is AVAILABLE
+        if (e.items && e.items.length > 0) {
+            return e.items.some(item => item.status === 'AVAILABLE');
+        }
+        // Fallback to equipment status if no items
+        return e.status === 'AVAILABLE';
+    }).length;
 
     // Total Users (who have rented)
     const uniqueUserIds = new Set(rentals.filter(r => r.user).map(r => r.user?.id));

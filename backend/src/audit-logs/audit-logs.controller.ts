@@ -7,6 +7,7 @@ import {
     UseGuards,
     ParseUUIDPipe,
     UnauthorizedException,
+    ForbiddenException,
     BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -83,7 +84,7 @@ export class AuditLogsController {
         // Verify password
         const isPasswordValid = await bcrypt.compare(adminPassword, admin.password);
         if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid admin password');
+            throw new ForbiddenException('Invalid admin password');
         }
 
         // Delete logs based on days parameter

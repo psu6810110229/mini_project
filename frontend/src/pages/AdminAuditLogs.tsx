@@ -75,10 +75,20 @@ export default function AdminDashboard() {
         } finally { setDeleteLoading(false); }
     };
 
-    // Derived data for equipment lists
+    // Helper: Calculate real status based on items (not equipment.status)
+    const getRealStatus = (eq: Equipment): 'AVAILABLE' | 'MAINTENANCE' | 'UNAVAILABLE' => {
+        if (eq.status === 'MAINTENANCE') return 'MAINTENANCE';
+        if (eq.items && eq.items.length > 0) {
+            const hasAvailable = eq.items.some(i => i.status === 'AVAILABLE');
+            return hasAvailable ? 'AVAILABLE' : 'UNAVAILABLE';
+        }
+        return eq.status as 'AVAILABLE' | 'MAINTENANCE' | 'UNAVAILABLE';
+    };
+
+    // Derived data for equipment lists - filter by REAL status
     const filteredEquipments = equipmentStatusFilter === 'ALL'
         ? equipments
-        : equipments.filter(e => e.status === equipmentStatusFilter);
+        : equipments.filter(e => getRealStatus(e) === equipmentStatusFilter);
 
     // Calc most rented stats
     const rentalCounts: Record<string, number> = {};
@@ -171,9 +181,14 @@ export default function AdminDashboard() {
                                             </div>
                                         </div>
                                     </div>
-                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${item.status === 'AVAILABLE' ? 'bg-green-500/20 text-green-300' : item.status === 'MAINTENANCE' ? 'bg-orange-500/20 text-orange-300' : 'bg-red-500/20 text-red-300'}`}>
-                                        {item.status}
-                                    </span>
+                                    {(() => {
+                                        const realStatus = getRealStatus(item);
+                                        return (
+                                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${realStatus === 'AVAILABLE' ? 'bg-green-500/20 text-green-300' : realStatus === 'MAINTENANCE' ? 'bg-orange-500/20 text-orange-300' : 'bg-red-500/20 text-red-300'}`}>
+                                                {realStatus}
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
                             ))}
                         </div>

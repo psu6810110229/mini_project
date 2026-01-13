@@ -42,7 +42,7 @@ export default function Navbar() {
                                 <span className="text-lg text-white">🎓 Photo Club</span>
                                 <div className="flex items-center gap-2">
                                     <span className="text-s text-white/70">{isAdmin ? "Admin" : "Gear Rental System"}</span>
-                                    <span className="px-1.5 py-0.5 bg-white/20 text-white text-[12px] rounded-full font-bold border border-white/30">V1.4TH</span>
+                                    <span className="px-1.5 py-0.5 bg-white/20 text-white text-[12px] rounded-full font-bold border border-white/30">V1.4demo</span>
                                 </div>
                             </Link>
 
