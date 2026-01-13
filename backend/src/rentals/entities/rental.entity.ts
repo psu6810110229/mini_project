@@ -11,78 +11,76 @@ import { User } from '../../users/entities/user.entity';
 import { Equipment } from '../../equipments/entities/equipment.entity';
 import { EquipmentItem } from '../../equipments/entities/equipment-item.entity';
 
-@Entity('rentals')
+@Entity('rentals')                                                       // ตาราง: rentals (การยืม-คืน)
 export class Rental {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
+    // ===== ความสัมพันธ์กับ USER =====
     @Column()
-    userId: string;
+    userId: string;                                                      // FK ไปยัง User
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'userId' })
-    user: User;
+    user: User;                                                          // ผู้ขอยืม
 
+    // ===== ความสัมพันธ์กับ EQUIPMENT =====
     @Column()
-    equipmentId: string;
+    equipmentId: string;                                                 // FK ไปยัง Equipment
 
-    @ManyToOne(() => Equipment, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Equipment, { onDelete: 'CASCADE' })                 // ลบ Equipment → ลบ Rental
     @JoinColumn({ name: 'equipmentId' })
-    equipment: Equipment;
+    equipment: Equipment;                                                // อุปกรณ์ที่ยืม
 
+    // ===== ความสัมพันธ์กับ EQUIPMENT ITEM (Optional) =====
     @Column({ nullable: true })
-    equipmentItemId: string;
+    equipmentItemId: string;                                             // FK ไปยัง EquipmentItem
 
-    @ManyToOne(() => EquipmentItem, { nullable: true, onDelete: 'SET NULL' })
+    @ManyToOne(() => EquipmentItem, { nullable: true, onDelete: 'SET NULL' }) // ลบ Item → SET NULL
     @JoinColumn({ name: 'equipmentItemId' })
-    equipmentItem: EquipmentItem;
+    equipmentItem: EquipmentItem;                                        // ชิ้นงานเฉพาะที่ยืม
+
+    // ===== ช่วงเวลายืม =====
+    @Column({ type: 'timestamp' })
+    startDate: Date;                                                     // วันเริ่มยืม
 
     @Column({ type: 'timestamp' })
-    startDate: Date;
+    endDate: Date;                                                       // วันคืน
 
-    @Column({ type: 'timestamp' })
-    endDate: Date;
-
+    // ===== สถานะการยืม (State Machine) =====
     @Column({
         type: 'enum',
         enum: RentalStatus,
-        default: RentalStatus.PENDING,
+        default: RentalStatus.PENDING,                                   // ค่าเริ่มต้น = รอพิจารณา
     })
-    status: RentalStatus;
+    status: RentalStatus;                                                // PENDING → APPROVED → CHECKED_OUT → RETURNED
 
+    // ===== รายละเอียดคำขอ =====
     @Column({ type: 'text', nullable: true })
-    requestDetails: string;
+    requestDetails: string;                                              // เหตุผลที่ขอยืม
 
     @Column({ nullable: true })
-    attachmentUrl: string;
+    attachmentUrl: string;                                               // ไฟล์แนบ (ถ้ามี)
 
     @Column({ type: 'text', nullable: true })
-    rejectReason: string;
+    rejectReason: string;                                                // เหตุผลที่ถูกปฏิเสธ
 
-    // ===== CHECKOUT/RETURN EVIDENCE (Optional) =====
-    // Users can upload images when picking up or returning equipment
-    // This provides evidence for admin review
-
-    /** URL of the image user uploads when picking up equipment */
+    // ===== หลักฐานการรับ-คืนอุปกรณ์ =====
     @Column({ nullable: true })
-    checkoutImageUrl: string;
+    checkoutImageUrl: string;                                            // รูปถ่ายตอนรับอุปกรณ์
 
-    /** Optional note from user when checking out */
     @Column({ type: 'text', nullable: true })
-    checkoutNote: string;
+    checkoutNote: string;                                                // หมายเหตุตอนรับ
 
-    /** URL of the image user uploads when returning equipment */
     @Column({ nullable: true })
-    returnImageUrl: string;
+    returnImageUrl: string;                                              // รูปถ่ายตอนคืนอุปกรณ์
 
-    /** Optional note from user when returning */
     @Column({ type: 'text', nullable: true })
-    returnNote: string;
+    returnNote: string;                                                  // หมายเหตุตอนคืน
 
-    /** Message required when user cancels the rental */
     @Column({ type: 'text', nullable: true })
-    cancelReason: string;
+    cancelReason: string;                                                // เหตุผลที่ยกเลิก
 
     @CreateDateColumn()
-    createdAt: Date;
+    createdAt: Date;                                                     // วันที่สร้างคำขอ
 }

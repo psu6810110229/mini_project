@@ -1,3 +1,18 @@
+/**
+ * =======================================================================
+ * MyRentals.tsx - หน้าประวัติการยืมของผู้ใช้
+ * =======================================================================
+ * 
+ * Features:
+ * 1. แสดงรายการยืมทั้งหมดของ user
+ * 2. แบ่งเป็น 2 tabs: กำลังดำเนินการ / ประวัติ
+ * 3. Filter ตามสถานะ (PENDING, APPROVED, CHECKED_OUT, etc.)
+ * 4. ยกเลิกคำขอยืมได้ (ถ้ายังไม่ CHECKED_OUT)
+ * 5. อัปโหลดหลักฐานการรับ-คืนอุปกรณ์
+ * 
+ * =======================================================================
+ */
+
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
 import type { Rental } from '../types';
@@ -8,45 +23,53 @@ import RentalItemCard from '../components/rentals/RentalItemCard';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import UploadEvidenceModal from '../components/rentals/UploadEvidenceModal';
 
+// ===== Type definitions สำหรับ Tabs และ Filters =====
 type TabType = 'active' | 'history';
 type ActiveStatusFilter = 'ALL' | 'PENDING' | 'APPROVED' | 'CHECKED_OUT';
 type HistoryStatusFilter = 'ALL' | 'RETURNED' | 'REJECTED' | 'CANCELLED';
 
 export default function MyRentals() {
-    const [rentals, setRentals] = useState<Rental[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [activeTab, setActiveTab] = useState<TabType>('active');
+    // ===== State หลัก =====
+    const [rentals, setRentals] = useState<Rental[]>([]);                 // รายการยืมทั้งหมด
+    const [loading, setLoading] = useState(true);                         // Loading state
+    const [error, setError] = useState('');                               // Error message
+    const [activeTab, setActiveTab] = useState<TabType>('active');        // Tab ปัจจุบัน
     const [activeStatusFilter, setActiveStatusFilter] = useState<ActiveStatusFilter>('ALL');
     const [historyStatusFilter, setHistoryStatusFilter] = useState<HistoryStatusFilter>('ALL');
 
-    // Modal states
+    // ===== Modal states สำหรับยกเลิก =====
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [cancellingRental, setCancellingRental] = useState<{ id: string; name: string } | null>(null);
     const [cancelLoading, setCancelLoading] = useState(false);
 
+    // ===== Modal states สำหรับอัปโหลดหลักฐาน =====
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [uploadRental, setUploadRental] = useState<{ id: string; type: 'checkout' | 'return' } | null>(null);
     const [successMessage, setSuccessMessage] = useState('');
 
+    // ===== โหลดข้อมูลตอน mount =====
     useEffect(() => { fetchMyRentals(); }, []);
 
+    // ===== ดึงรายการยืมของ user จาก API =====
     const fetchMyRentals = async () => {
         try {
             const response = await apiClient.get<Rental[]>('/rentals/me');
+            // เรียงจากใหม่ไปเก่า
             setRentals(response.data.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
         } catch (err: any) { setError(err.response?.data?.message || 'โหลดข้อมูลไม่สำเร็จ'); }
         finally { setLoading(false); }
     };
 
+    // ===== เปิด Modal ยืนยันยกเลิก =====
     const handleCancelClick = (id: string, name: string) => { setCancellingRental({ id, name }); setShowCancelModal(true); };
 
+    // ===== ยืนยันการยกเลิก → เรียก API =====
     const handleConfirmCancel = async () => {
         if (!cancellingRental) return;
         setCancelLoading(true);
         try {
             await apiClient.patch(`/rentals/${cancellingRental.id}/status`, { status: 'CANCELLED' });
-            await fetchMyRentals();
+            await fetchMyRentals();                                       // Refresh ข้อมูล
             setShowCancelModal(false); setCancellingRental(null); setSuccessMessage('ยกเลิกรายการยืมสำเร็จ');
         } catch (err: any) {
             const msg = err.response?.data?.message || 'ยกเลิกไม่สำเร็จ';
@@ -54,29 +77,36 @@ export default function MyRentals() {
         } finally { setCancelLoading(false); }
     };
 
+    // ===== เปิด Modal อัปโหลดหลักฐาน =====
     const handleUploadClick = (rental: Rental) => {
-        const type = rental.status === 'APPROVED' ? 'checkout' : 'return';
+        const type = rental.status === 'APPROVED' ? 'checkout' : 'return';// กำหนดประเภทตามสถานะ
         setUploadRental({ id: rental.id, type });
         setShowUploadModal(true);
     };
 
+    // ===== เมื่ออัปโหลดสำเร็จ =====
     const handleUploadSuccess = () => {
         fetchMyRentals();
         setSuccessMessage('อัปโหลดหลักฐานสำเร็จ');
-        setTimeout(() => setSuccessMessage(''), 3000);
+        setTimeout(() => setSuccessMessage(''), 3000);                    // ซ่อนหลัง 3 วินาที
     };
 
-    const activeStatuses = ['PENDING', 'APPROVED', 'CHECKED_OUT'];
-    const historyStatuses = ['RETURNED', 'REJECTED', 'CANCELLED'];
+    // ===== แยกรายการตามสถานะ =====
+    const activeStatuses = ['PENDING', 'APPROVED', 'CHECKED_OUT'];        // Active = ยังไม่จบ
+    const historyStatuses = ['RETURNED', 'REJECTED', 'CANCELLED'];        // History = จบแล้ว
     const activeRentals = rentals.filter(r => activeStatuses.includes(r.status));
     const historyRentals = rentals.filter(r => historyStatuses.includes(r.status));
+
+    // ===== กรองตาม filter ที่เลือก =====
     const filteredActive = activeStatusFilter === 'ALL' ? activeRentals : activeRentals.filter(r => r.status === activeStatusFilter);
     const filteredHistory = historyStatusFilter === 'ALL' ? historyRentals : historyRentals.filter(r => r.status === historyStatusFilter);
     const displayedRentals = activeTab === 'active' ? filteredActive : filteredHistory;
 
+    // ===== นับจำนวนแต่ละสถานะ (แสดงใน filter buttons) =====
     const activeStatusCounts = { ALL: activeRentals.length, PENDING: activeRentals.filter(r => r.status === 'PENDING').length, APPROVED: activeRentals.filter(r => r.status === 'APPROVED').length, CHECKED_OUT: activeRentals.filter(r => r.status === 'CHECKED_OUT').length };
     const historyStatusCounts = { ALL: historyRentals.length, RETURNED: historyRentals.filter(r => r.status === 'RETURNED').length, REJECTED: historyRentals.filter(r => r.status === 'REJECTED').length, CANCELLED: historyRentals.filter(r => r.status === 'CANCELLED').length };
 
+    // ===== Config สำหรับ Filter Buttons =====
     const activeFilterButtons: { key: ActiveStatusFilter; label: string; color: string; icon?: React.ReactNode }[] = [
         { key: 'ALL', label: 'All', color: 'bg-slate-600' },
         { key: 'PENDING', label: 'Pending', color: 'bg-amber-600', icon: <Loader className="w-4 h-4" /> },
@@ -94,8 +124,10 @@ export default function MyRentals() {
 
     return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto">
+            {/* Header */}
             <div className="flex items-center gap-3 mb-6"><History className="w-8 h-8 text-white" /><h1 className="text-3xl md:text-4xl font-bold text-white" style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}>รายการยืมของฉัน</h1></div>
 
+            {/* Success Message */}
             {successMessage && (
                 <div className="mb-6 flex gap-3 backdrop-blur-2xl bg-green-900/50 border border-green-500/30 rounded-xl p-4 shadow-lg animate-fade-in">
                     <CheckCircle className="h-5 w-5 text-green-300 flex-shrink-0 mt-0.5" />
@@ -103,6 +135,7 @@ export default function MyRentals() {
                 </div>
             )}
 
+            {/* Error Message */}
             {error && (
                 <div className="backdrop-blur-2xl bg-red-900/50 rounded-xl p-4 border border-red-500/30 mb-6 flex items-center gap-3">
                     <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" /><p className="text-red-200 text-sm">{error}</p>
@@ -110,6 +143,7 @@ export default function MyRentals() {
                 </div>
             )}
 
+            {/* Tab Buttons */}
             <div className="flex gap-2 mb-6">
                 <button onClick={() => { setActiveTab('active'); setActiveStatusFilter('ALL'); }} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all ${activeTab === 'active' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' : 'bg-slate-800/50 text-white/70 hover:bg-slate-700/50 border border-white/10'}`}>
                     <Activity className="w-4 h-4" /> กำลังดำเนินการ {activeRentals.length > 0 && <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === 'active' ? 'bg-white/20' : 'bg-blue-500/30'}`}>{activeRentals.length}</span>}
@@ -119,6 +153,7 @@ export default function MyRentals() {
                 </button>
             </div>
 
+            {/* Status Filter Buttons */}
             <div className="mb-6">
                 <div className="flex items-center gap-2 mb-3"><Filter className="w-5 h-5 text-white/70" /><span className="text-white/70 font-medium">กรองตามสถานะ</span></div>
                 <div className="flex flex-wrap gap-2">
@@ -131,6 +166,7 @@ export default function MyRentals() {
                 </div>
             </div>
 
+            {/* Rental List หรือ Empty State */}
             {displayedRentals.length === 0 ? (
                 <EmptyState icon={activeTab === 'active' ? Activity : Archive} message={activeTab === 'active' ? "ไม่มีรายการที่กำลังดำเนินการ" : "ไม่มีประวัติการยืม"} />
             ) : (
@@ -146,10 +182,12 @@ export default function MyRentals() {
                 </div>
             )}
 
+            {/* Cancel Confirmation Modal */}
             <ConfirmModal isOpen={showCancelModal} title="ยกเลิกรายการยืม" message={`ต้องการยกเลิกคำขอยืม ${cancellingRental?.name} หรือไม่?`} variant="danger" confirmLabel="ยกเลิก" cancelLabel="ไม่ยกเลิก" onConfirm={handleConfirmCancel} onCancel={() => { setShowCancelModal(false); setCancellingRental(null); }} loading={cancelLoading}>
                 <p className="text-amber-400/80 text-sm mt-2">การกระทำนี้ไม่สามารถย้อนกลับได้</p>
             </ConfirmModal>
 
+            {/* Upload Evidence Modal */}
             {uploadRental && (
                 <UploadEvidenceModal
                     isOpen={showUploadModal}

@@ -14,7 +14,7 @@ import { RentalStatus } from '../common/enums';
  * 2. ตรวจสอบการเปลี่ยนสถานะว่าถูกต้องหรือไม่ (State Machine)
  * 
  * =====================================================================
- * 🔥 OVERLAP ALGORITHM (สำคัญมาก - ข้อสอบถามแน่!)
+ * 🔥 OVERLAP ALGORITHM (สำคัญมาก!)
  * =====================================================================
  * 
  * สูตร: ช่วงเวลา A กับ B ซ้อนกัน ถ้า:
@@ -35,7 +35,7 @@ import { RentalStatus } from '../common/enums';
 export class RentalValidationService {
     constructor(
         @InjectRepository(Rental)
-        private rentalRepository: Repository<Rental>,
+        private rentalRepository: Repository<Rental>,                                     // ตาราง rentals
     ) { }
 
     /**
@@ -50,7 +50,7 @@ export class RentalValidationService {
         const queryBuilder = this.rentalRepository
             .createQueryBuilder('rental')
             .where('rental.equipmentId = :equipmentId', { equipmentId })
-            // ไม่นับ Rental ที่จบไปแล้ว
+            // ไม่นับ Rental ที่จบไปแล้ว (RETURNED, REJECTED, CANCELLED)
             .andWhere('rental.status NOT IN (:...excludedStatuses)', {
                 excludedStatuses: [RentalStatus.RETURNED, RentalStatus.REJECTED, RentalStatus.CANCELLED],
             })
@@ -63,18 +63,19 @@ export class RentalValidationService {
         }
 
         if (excludeRentalId) {
-            queryBuilder.andWhere('rental.id != :excludeRentalId', { excludeRentalId });
+            queryBuilder.andWhere('rental.id != :excludeRentalId', { excludeRentalId });  // ไม่รวมตัวเอง
         }
 
         const count = await queryBuilder.getCount();
-        return count > 0;
+        return count > 0;                                                                  // มี overlap ถ้า count > 0
     }
 
+    // ===== ตรวจ overlap โดยไม่รวม user คนเดียวกัน =====
     async checkOverlapExcludingUser(equipmentId: string, startDate: Date, endDate: Date, excludeUserId: string, equipmentItemId?: string): Promise<boolean> {
         const queryBuilder = this.rentalRepository
             .createQueryBuilder('rental')
             .where('rental.equipmentId = :equipmentId', { equipmentId })
-            .andWhere('rental.userId != :excludeUserId', { excludeUserId })
+            .andWhere('rental.userId != :excludeUserId', { excludeUserId })               // ไม่รวม user ตัวเอง
             .andWhere('rental.status NOT IN (:...excludedStatuses)', {
                 excludedStatuses: [RentalStatus.RETURNED, RentalStatus.REJECTED, RentalStatus.CANCELLED],
             })
@@ -96,23 +97,24 @@ export class RentalValidationService {
      * 
      * กฎ: แต่ละสถานะจะเปลี่ยนไปได้เฉพาะบางสถานะเท่านั้น
      * 
-     * PENDING     → APPROVED, REJECTED, CANCELLED
-     * APPROVED    → CHECKED_OUT, CANCELLED
-     * CHECKED_OUT → RETURNED
-     * RETURNED    → (จบ)
-     * REJECTED    → (จบ)
-     * CANCELLED   → (จบ)
+     * PENDING     → APPROVED, REJECTED, CANCELLED  (รอพิจารณา)
+     * APPROVED    → CHECKED_OUT, CANCELLED         (อนุมัติแล้ว)
+     * CHECKED_OUT → RETURNED                       (รับไปแล้ว)
+     * RETURNED    → (จบ)                           (คืนแล้ว)
+     * REJECTED    → (จบ)                           (ปฏิเสธ)
+     * CANCELLED   → (จบ)                           (ยกเลิก)
      * 
      * =====================================================================
      */
     validateStatusTransition(currentStatus: RentalStatus, newStatus: RentalStatus): void {
+        // Map: สถานะปัจจุบัน → สถานะที่อนุญาตให้เปลี่ยนไปได้
         const allowedTransitions: Record<RentalStatus, RentalStatus[]> = {
             [RentalStatus.PENDING]: [RentalStatus.APPROVED, RentalStatus.REJECTED, RentalStatus.CANCELLED],
             [RentalStatus.APPROVED]: [RentalStatus.CHECKED_OUT, RentalStatus.CANCELLED],
-            [RentalStatus.CHECKED_OUT]: [RentalStatus.RETURNED],
-            [RentalStatus.RETURNED]: [],   // สถานะสุดท้าย - เปลี่ยนต่อไม่ได้
-            [RentalStatus.REJECTED]: [],   // สถานะสุดท้าย
-            [RentalStatus.CANCELLED]: [],  // สถานะสุดท้าย
+            [RentalStatus.CHECKED_OUT]: [RentalStatus.RETURNED],                           // ยืมแล้วต้องคืน ห้ามยกเลิก
+            [RentalStatus.RETURNED]: [],                                                    // สถานะสุดท้าย
+            [RentalStatus.REJECTED]: [],                                                    // สถานะสุดท้าย
+            [RentalStatus.CANCELLED]: [],                                                   // สถานะสุดท้าย
         };
 
         if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
@@ -122,10 +124,11 @@ export class RentalValidationService {
         }
     }
 
+    // ===== ดึง rentals ที่ซ้อนทับ (สำหรับ auto-reject) =====
     async getOverlappingRentals(equipmentId: string, startDate: Date, endDate: Date, equipmentItemId?: string): Promise<Rental[]> {
         const queryBuilder = this.rentalRepository
             .createQueryBuilder('rental')
-            .leftJoinAndSelect('rental.user', 'user')
+            .leftJoinAndSelect('rental.user', 'user')                                      // รวมข้อมูล user
             .leftJoinAndSelect('rental.equipment', 'equipment')
             .where('rental.equipmentId = :equipmentId', { equipmentId })
             .andWhere('rental.status IN (:...activeStatuses)', {
@@ -138,6 +141,6 @@ export class RentalValidationService {
             queryBuilder.andWhere('rental.equipmentItemId = :equipmentItemId', { equipmentItemId });
         }
 
-        return queryBuilder.orderBy('rental.startDate', 'ASC').getMany();
+        return queryBuilder.orderBy('rental.startDate', 'ASC').getMany();                  // เรียงตามวันเริ่ม
     }
 }

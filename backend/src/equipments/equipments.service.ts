@@ -12,51 +12,50 @@ import { EquipmentItemStatus } from '../common/enums';
 export class EquipmentsService {
     constructor(
         @InjectRepository(Equipment)
-        private equipmentRepository: Repository<Equipment>,
+        private equipmentRepository: Repository<Equipment>,                              // ตาราง equipments
         @InjectRepository(EquipmentItem)
-        private equipmentItemRepository: Repository<EquipmentItem>,
-        private auditLogsService: AuditLogsService,
+        private equipmentItemRepository: Repository<EquipmentItem>,                      // ตาราง equipment_items
+        private auditLogsService: AuditLogsService,                                       // บันทึก audit log
     ) { }
 
+    // ===== สร้างอุปกรณ์ใหม่ พร้อม auto-create items =====
     async create(createEquipmentDto: CreateEquipmentDto, userId?: string, username?: string): Promise<Equipment> {
         const equipment = this.equipmentRepository.create(createEquipmentDto);
         const savedEquipment = await this.equipmentRepository.save(equipment);
 
-        // Auto-create items based on stockQty
+        // สร้าง EquipmentItem ตามจำนวน stockQty (เช่น stockQty=5 → สร้าง 5 items)
         const stockQty = createEquipmentDto.stockQty || 1;
         const items: EquipmentItem[] = [];
         for (let i = 1; i <= stockQty; i++) {
             const item = this.equipmentItemRepository.create({
                 equipmentId: savedEquipment.id,
-                itemCode: String(i).padStart(3, '0'),
+                itemCode: String(i).padStart(3, '0'),                                     // "001", "002", "003"...
                 status: EquipmentItemStatus.AVAILABLE,
             });
             items.push(item);
         }
         await this.equipmentItemRepository.save(items);
 
-        // Log equipment creation
+        // บันทึก audit log (ถ้ามี user info)
         if (userId && username) {
             await this.auditLogsService.log(
-                userId,
-                username,
-                'EQUIPMENT_CREATE',
-                undefined,
+                userId, username, 'EQUIPMENT_CREATE', undefined,
                 JSON.stringify({ equipmentId: savedEquipment.id, name: savedEquipment.name, itemsCreated: stockQty }),
             );
         }
 
-        // Return with items
-        return this.findOne(savedEquipment.id);
+        return this.findOne(savedEquipment.id);                                           // Return พร้อม items
     }
 
+    // ===== ดึงอุปกรณ์ทั้งหมด =====
     async findAll(): Promise<Equipment[]> {
         return this.equipmentRepository.find({
-            order: { createdAt: 'DESC' },
-            relations: ['items'],
+            order: { createdAt: 'DESC' },                                                 // เรียงจากใหม่ไปเก่า
+            relations: ['items'],                                                         // รวม items
         });
     }
 
+    // ===== ดึงอุปกรณ์เดียว (by ID) =====
     async findOne(id: string): Promise<Equipment> {
         const equipment = await this.equipmentRepository.findOne({
             where: { id },
@@ -68,24 +67,25 @@ export class EquipmentsService {
         return equipment;
     }
 
+    // ===== อัปเดตอุปกรณ์ =====
     async update(id: string, updateEquipmentDto: UpdateEquipmentDto, userId?: string, username?: string): Promise<Equipment> {
         const equipment = await this.findOne(id);
         const oldStockQty = equipment.stockQty;
         const newStockQty = updateEquipmentDto.stockQty;
 
-        Object.assign(equipment, updateEquipmentDto);
+        Object.assign(equipment, updateEquipmentDto);                                     // อัปเดต fields
         const savedEquipment = await this.equipmentRepository.save(equipment);
 
-        // Handle stockQty changes - add more items if increased
+        // ถ้าเพิ่ม stockQty → สร้าง items เพิ่ม
         if (newStockQty && newStockQty > oldStockQty) {
             const currentMaxCode = equipment.items.length > 0
-                ? Math.max(...equipment.items.map(i => parseInt(i.itemCode)))
+                ? Math.max(...equipment.items.map(i => parseInt(i.itemCode)))             // หา itemCode สูงสุด
                 : 0;
             const itemsToAdd: EquipmentItem[] = [];
             for (let i = currentMaxCode + 1; i <= currentMaxCode + (newStockQty - oldStockQty); i++) {
                 const item = this.equipmentItemRepository.create({
                     equipmentId: savedEquipment.id,
-                    itemCode: String(i).padStart(3, '0'),
+                    itemCode: String(i).padStart(3, '0'),                                 // ต่อจากเดิม
                     status: EquipmentItemStatus.AVAILABLE,
                 });
                 itemsToAdd.push(item);
@@ -93,13 +93,10 @@ export class EquipmentsService {
             await this.equipmentItemRepository.save(itemsToAdd);
         }
 
-        // Log equipment update
+        // บันทึก audit log
         if (userId && username) {
             await this.auditLogsService.log(
-                userId,
-                username,
-                'EQUIPMENT_UPDATE',
-                undefined,
+                userId, username, 'EQUIPMENT_UPDATE', undefined,
                 JSON.stringify({ equipmentId: id, name: equipment.name, changes: updateEquipmentDto }),
             );
         }
@@ -107,6 +104,7 @@ export class EquipmentsService {
         return this.findOne(savedEquipment.id);
     }
 
+    // ===== อัปเดตสถานะ item เดี่ยว (AVAILABLE/RENTED/MAINTENANCE) =====
     async updateItemStatus(itemId: string, status: EquipmentItemStatus, userId?: string, username?: string): Promise<EquipmentItem> {
         const item = await this.equipmentItemRepository.findOne({
             where: { id: itemId },
@@ -119,13 +117,10 @@ export class EquipmentsService {
         item.status = status;
         const savedItem = await this.equipmentItemRepository.save(item);
 
-        // Log item status update
+        // บันทึก audit log
         if (userId && username) {
             await this.auditLogsService.log(
-                userId,
-                username,
-                'EQUIPMENT_ITEM_STATUS_UPDATE',
-                undefined,
+                userId, username, 'EQUIPMENT_ITEM_STATUS_UPDATE', undefined,
                 JSON.stringify({ itemId, itemCode: item.itemCode, equipmentName: item.equipment?.name, newStatus: status }),
             );
         }
@@ -133,18 +128,16 @@ export class EquipmentsService {
         return savedItem;
     }
 
+    // ===== ลบอุปกรณ์ (พร้อม items ถูก CASCADE delete) =====
     async remove(id: string, userId?: string, username?: string): Promise<void> {
         const equipment = await this.findOne(id);
         const equipmentName = equipment.name;
-        await this.equipmentRepository.remove(equipment);
+        await this.equipmentRepository.remove(equipment);                                 // Items ถูกลบตาม CASCADE
 
-        // Log equipment deletion
+        // บันทึก audit log
         if (userId && username) {
             await this.auditLogsService.log(
-                userId,
-                username,
-                'EQUIPMENT_DELETE',
-                undefined,
+                userId, username, 'EQUIPMENT_DELETE', undefined,
                 JSON.stringify({ equipmentId: id, name: equipmentName }),
             );
         }

@@ -1,82 +1,78 @@
-import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
-import { envValidationSchema } from './config/env.validation';
-import { AuthModule } from './auth/auth.module';
-import { EquipmentsModule } from './equipments/equipments.module';
-import { RentalsModule } from './rentals/rentals.module';
-import { AuditLogsModule } from './audit-logs/audit-logs.module';
-import { User } from './users/entities/user.entity';
-import { Equipment } from './equipments/entities/equipment.entity';
-import { EquipmentItem } from './equipments/entities/equipment-item.entity';
-import { Rental } from './rentals/entities/rental.entity';
-import { AuditLog } from './audit-logs/entities/audit-log.entity';
-import { LoggerMiddleware } from './common/middleware/logger.middleware';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { AppController } from './app.controller';
-import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
-import { RoleGuard } from './auth/guards/role.guard';
-import { SeedsModule } from './database/seeds/seeds.module';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common'; // NestJS core decorators
+import { ConfigModule, ConfigService } from '@nestjs/config';            // จัดการ environment variables
+import { TypeOrmModule } from '@nestjs/typeorm';                         // เชื่อมต่อ database
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';     // จำกัด request rate
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';                    // Global providers
+import { envValidationSchema } from './config/env.validation';           // Validate .env file
+import { AuthModule } from './auth/auth.module';                         // Module การ login/JWT
+import { EquipmentsModule } from './equipments/equipments.module';       // Module อุปกรณ์
+import { RentalsModule } from './rentals/rentals.module';                // Module การยืม
+import { AuditLogsModule } from './audit-logs/audit-logs.module';        // Module บันทึกกิจกรรม
+import { User } from './users/entities/user.entity';                     // Entity ผู้ใช้
+import { Equipment } from './equipments/entities/equipment.entity';      // Entity อุปกรณ์
+import { EquipmentItem } from './equipments/entities/equipment-item.entity'; // Entity ชิ้นงาน
+import { Rental } from './rentals/entities/rental.entity';               // Entity การยืม
+import { AuditLog } from './audit-logs/entities/audit-log.entity';       // Entity log
+import { LoggerMiddleware } from './common/middleware/logger.middleware';// Log ทุก request
+import { HttpExceptionFilter } from './common/filters/http-exception.filter'; // จัดการ error response
+import { AppController } from './app.controller';                        // Controller หลัก
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';            // Guard ตรวจ JWT token
+import { RoleGuard } from './auth/guards/role.guard';                   // Guard ตรวจ role (ADMIN/USER)
+import { SeedsModule } from './database/seeds/seeds.module';            // Seed ข้อมูลเริ่มต้น
 
 @Module({
     imports: [
+        // ConfigModule - โหลดค่าจาก .env file และทำให้ใช้ได้ทั้งแอป
         ConfigModule.forRoot({
-            isGlobal: true,
-            validationSchema: envValidationSchema,
-            validationOptions: {
-                abortEarly: true,
-            },
+            isGlobal: true,                                              // ใช้ได้ทุก module โดยไม่ต้อง import
+            validationSchema: envValidationSchema,                       // ตรวจสอบว่า .env มีครบ
+            validationOptions: { abortEarly: true },                     // หยุดเมื่อเจอ error แรก
         }),
-        // Rate limiting: 100 requests per 60 seconds per IP
+
+        // ThrottlerModule - ป้องกัน DDoS/Brute Force (100 req/นาที/IP)
         ThrottlerModule.forRoot([{
-            ttl: 60000,
-            limit: 100,
+            ttl: 60000,                                                  // ช่วงเวลา 60 วินาที
+            limit: 100,                                                  // สูงสุด 100 requests
         }]),
+
+        // TypeOrmModule - เชื่อมต่อ PostgreSQL database
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) => ({
+            useFactory: (configService: ConfigService) => ({            // ดึงค่าจาก .env
                 type: 'postgres',
-                host: configService.get<string>('DB_HOST'),
-                port: configService.get<number>('DB_PORT'),
-                username: configService.get<string>('DB_USERNAME'),
-                password: configService.get<string>('DB_PASSWORD'),
-                database: configService.get<string>('DB_DATABASE'),
-                entities: [User, Equipment, EquipmentItem, Rental, AuditLog],
-                autoLoadEntities: true,
-                synchronize: true,
+                host: configService.get<string>('DB_HOST'),              // เช่น localhost
+                port: configService.get<number>('DB_PORT'),              // เช่น 5432
+                username: configService.get<string>('DB_USERNAME'),      // ชื่อผู้ใช้ DB
+                password: configService.get<string>('DB_PASSWORD'),      // รหัสผ่าน DB
+                database: configService.get<string>('DB_DATABASE'),      // ชื่อ database
+                entities: [User, Equipment, EquipmentItem, Rental, AuditLog], // ตารางทั้งหมด
+                autoLoadEntities: true,                                  // โหลด entity อัตโนมัติ
+                synchronize: true,                                       // สร้างตารางอัตโนมัติ (dev only!)
             }),
         }),
-        AuthModule,
-        EquipmentsModule,
-        RentalsModule,
-        AuditLogsModule,
-        SeedsModule,
+
+        // Feature Modules - แต่ละ module จัดการ feature แยกกัน
+        AuthModule,                                                      // Login, JWT, Guards
+        EquipmentsModule,                                                // CRUD อุปกรณ์
+        RentalsModule,                                                   // คำขอยืม-คืน
+        AuditLogsModule,                                                 // บันทึกประวัติ
+        SeedsModule,                                                     // สร้างข้อมูลเริ่มต้น
     ],
-    controllers: [AppController],
+    controllers: [AppController],                                        // Controller ของ root path
     providers: [
-        {
-            provide: APP_FILTER,
-            useClass: HttpExceptionFilter,
-        },
-        {
-            provide: APP_GUARD,
-            useClass: ThrottlerGuard,
-        },
-        {
-            provide: APP_GUARD,
-            useClass: JwtAuthGuard,
-        },
-        {
-            provide: APP_GUARD,
-            useClass: RoleGuard,
-        },
+        // Global Exception Filter - จัดรูปแบบ error response ให้เหมือนกันทุก endpoint
+        { provide: APP_FILTER, useClass: HttpExceptionFilter },
+
+        // Global Guards - ตรวจสอบทุก request ตามลำดับ:
+        { provide: APP_GUARD, useClass: ThrottlerGuard },               // 1. ตรวจ rate limit
+        { provide: APP_GUARD, useClass: JwtAuthGuard },                 // 2. ตรวจ JWT token
+        { provide: APP_GUARD, useClass: RoleGuard },                    // 3. ตรวจ role permission
     ],
 })
 export class AppModule implements NestModule {
+    // Middleware - รันก่อน Guards ทุก request
     configure(consumer: MiddlewareConsumer) {
-        consumer.apply(LoggerMiddleware).forRoutes('*path');
+        consumer.apply(LoggerMiddleware).forRoutes('*path');            // Log ทุก route
     }
 }

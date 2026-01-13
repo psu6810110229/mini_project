@@ -1,35 +1,35 @@
 import axios from 'axios';
 
+// ===== สร้าง Axios Instance สำหรับเรียก API =====
 const apiClient = axios.create({
-  // เพิ่ม /api ต่อท้าย port 3000
-  baseURL: 'http://localhost:3000/api',
+  baseURL: 'http://localhost:3000/api',                                   // Backend URL (NestJS)
   headers: {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json',                                   // ส่งข้อมูลแบบ JSON
   },
 });
 
-// Request Interceptor สำหรับใส่ Token
+// ===== Request Interceptor - ใส่ JWT Token ทุก request =====
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token');                          // ดึง token จาก localStorage
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;                   // ใส่ใน Authorization header
     }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor สำหรับจัดการ 401 Unauthorized
+// ===== Response Interceptor - จัดการ Error =====
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => response,                                                 // สำเร็จ → return ปกติ
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid - clear storage and redirect to login
+    if (error.response?.status === 401) {                                 // Token หมดอายุ หรือ invalid
+      // Clear storage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
 
-      // Only redirect if not already on login page
+      // Redirect ไป login (ถ้ายังไม่อยู่หน้า login)
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

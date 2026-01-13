@@ -1,3 +1,18 @@
+/**
+ * =======================================================================
+ * Login.tsx - หน้าเข้าสู่ระบบ
+ * =======================================================================
+ * 
+ * Flow:
+ * 1. User กรอก studentId และ password
+ * 2. กดปุ่ม Login → เรียก POST /api/auth/login
+ * 3. ได้ JWT token + user data กลับมา
+ * 4. เก็บลง localStorage
+ * 5. Redirect ไปหน้าที่เหมาะสม (Admin → /admin/rentals, User → /equipments)
+ * 
+ * =======================================================================
+ */
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import apiClient from '../api/client';
@@ -6,30 +21,36 @@ import { Lock, User, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [studentId, setStudentId] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
 
+  // ===== State สำหรับ Form =====
+  const [studentId, setStudentId] = useState('');                         // รหัสนักศึกษา
+  const [password, setPassword] = useState('');                           // รหัสผ่าน
+  const [showPassword, setShowPassword] = useState(false);                // แสดง/ซ่อนรหัสผ่าน
+  const [error, setError] = useState('');                                 // Error message
+  const [loading, setLoading] = useState(false);                          // Loading state
+
+  // ===== Handler สำหรับ Submit Form =====
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault();                                                   // ป้องกัน page refresh
     setError('');
     setLoading(true);
 
     try {
+      // 1. เรียก API Login
       const { data } = await apiClient.post<AuthResponse>('/auth/login', {
         studentId,
         password,
       });
 
-      localStorage.setItem('token', data.accessToken);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // 2. เก็บ Token และ User ลง localStorage
+      localStorage.setItem('token', data.accessToken);                    // JWT token
+      localStorage.setItem('user', JSON.stringify(data.user));            // User object
 
+      // 3. Redirect ตาม Role
       if (data.user.role === 'ADMIN') {
-        navigate('/admin/rentals');
+        navigate('/admin/rentals');                                       // Admin → หน้าจัดการยืม
       } else {
-        navigate('/equipments');
+        navigate('/equipments');                                          // User → หน้าดูอุปกรณ์
       }
     } catch (err: any) {
       setError(err.response?.data?.message || 'เข้าสู่ระบบไม่สำเร็จ');
@@ -42,13 +63,13 @@ const Login = () => {
     <div
       className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
       style={{
-        backgroundImage: 'url(/main-bg.jpg)',
+        backgroundImage: 'url(/main-bg.jpg)',                             // Background image
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
       }}
     >
-      {/* Overlay for better contrast */}
+      {/* Overlay สำหรับความคมชัด */}
       <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]" />
 
       {/* Glassmorphism Card */}
@@ -115,6 +136,7 @@ const Login = () => {
                   className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl py-3.5 pl-12 pr-12 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all"
                   placeholder="••••••••"
                 />
+                {/* Toggle แสดง/ซ่อน password */}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
