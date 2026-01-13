@@ -5,6 +5,7 @@ import {
     CreateDateColumn,
     OneToMany,
 } from 'typeorm';
+
 import { EquipmentStatus } from '../../common/enums';
 import { EquipmentItem } from './equipment-item.entity';
 
